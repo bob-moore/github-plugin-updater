@@ -1,0 +1,130 @@
+<?php
+/**
+ * Blocks Service Definition
+ *
+ * PHP Version 8.2
+ *
+ * @package mwf_cornerstone
+ * @author  Bob Moore <bob.moore@midwestfamilymadison.com>
+ * @license GPL-2.0+ <http://www.gnu.org/licenses/gpl-2.0.txt>
+ * @link    https://www.midwestfamilymadison.com
+ * @since   1.0.0
+ */
+
+namespace MarkedEffect\GithubUpdater\Providers;
+
+
+use MarkedEffect\GithubUpdater\Core\Abstracts,
+	MarkedEffect\GithubUpdater\Services\RemoteRequest;
+
+use DI\Attribute\Inject;
+/**
+ * Service class for blocks
+ *
+ * @subpackage Providers
+ */
+class Updates extends Abstracts\Module
+{
+	#[Inject([
+		'version'     => 'config.version',
+		'plugin_slug' => 'config.slug',
+		'package'     => 'config.package',
+	])]
+	public function __construct(
+		protected RemoteRequest $remote_request,
+		protected string $version,
+		protected string $plugin_slug,
+		string $package = '',
+	)
+	{
+		parent::__construct( $package );
+	}
+	/**
+	 * Check for updates, and return an update response if available.
+	 *
+	 * @return object|null
+	 */
+	protected function checkUpdates(): ?object
+	{
+		$remote = $this->remote_request->getPluginInfo();
+		/**
+		 * Check if the plugin version has bumped on the github repo,
+		 * and that the new version requirements are met.
+		 */
+		if ( 
+			! version_compare( $this->version, $remote['version'], '<' )
+			|| ! version_compare( $remote['requires'], get_bloginfo( 'version' ), '<=' )
+			|| ! version_compare( $remote['requires_php'], PHP_VERSION, '<' )
+		) {
+			return null;
+		}
+
+		$release = $this->remote_request->requestRelease( $remote['version'] );
+
+		if ( ! $release ) {
+			return null;
+		}
+
+		$package = $this->getReleaseZip( $release );
+
+		if ( ! $package ) {
+						return null;
+		}
+
+		$update = apply_filters(
+			"{$this->package}_update_response",
+			[
+				'new_version'   => $remote['version'],
+				'package'       => $package,
+				'tested'        => $remote['tested'],
+				'requires_php'  => $remote['requires_php'],
+				'added'         => $release->created_at,
+				'last_updated'  => $release->published_at,
+			]
+		);
+
+		return $update;
+	}
+	/**
+	 * Filters the update transient.
+	 *
+	 * @param object $transient The transient object.
+	 *
+	 * @return object
+	 */
+	public function update( mixed $transient ): mixed
+	{
+		if ( ! is_object( $transient ) || empty( $transient->checked ) ) {
+			return $transient;
+		}
+
+		$updates = $this->checkUpdates();
+
+		if ( ! $updates ) {
+			return $transient;
+		}
+
+		$transient->response[ $this->plugin_slug ] = $updates;
+
+		return $transient;
+	}
+	/**
+	 * Get the package URL from the release object.
+	 *
+	 * @param object $release The release object.
+	 *
+	 * @return string|null The package URL or null if not found.
+	 */
+ 	protected function getReleaseZip( object $release ): ?string
+	{
+		$assets = $release->assets;
+
+		foreach ( $assets as $asset ) {
+			if ( str_contains( $asset->name, 'zip' ) ) {
+				return $asset->browser_download_url;
+			}
+		}
+
+		return null;
+	}
+}
