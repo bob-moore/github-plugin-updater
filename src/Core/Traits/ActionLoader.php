@@ -11,7 +11,7 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Core\Traits;
+namespace MarkedEffect\GHPluginUpdater\Core\Traits;
 
 /**
  * Action Loader trait

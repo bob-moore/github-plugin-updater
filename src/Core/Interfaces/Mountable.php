@@ -11,12 +11,12 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Core\Interfaces;
+namespace MarkedEffect\GHPluginUpdater\Core\Interfaces;
 
 /**
  * Action Module interface requirements
  *
- * Used to type hint against MarkedEffect\GithubUpdater\Core\Interfaces\ActionModule.
+ * Used to type hint against MarkedEffect\GHPluginUpdater\Core\Interfaces\ActionModule.
  *
  * @subpackage Interfaces
  */

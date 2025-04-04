@@ -11,9 +11,9 @@
  * @since   1.0.0
  */
 
- namespace MarkedEffect\GithubUpdater\Middleware;
+ namespace MarkedEffect\GHPluginUpdater\Middleware;
 
-use MarkedEffect\GithubUpdater\Core\Abstracts;
+use MarkedEffect\GHPluginUpdater\Core\Abstracts;
 
 /**
  * Service class for router actions

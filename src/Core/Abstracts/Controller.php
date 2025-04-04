@@ -11,10 +11,10 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Core\Abstracts;
+namespace MarkedEffect\GHPluginUpdater\Core\Abstracts;
 
-use MarkedEffect\GithubUpdater\Core\Interfaces,
-	MarkedEffect\GithubUpdater\Core\Traits;
+use MarkedEffect\GHPluginUpdater\Core\Interfaces,
+	MarkedEffect\GHPluginUpdater\Core\Traits;
 
 /**
  * Abstract ActionModule class

@@ -11,9 +11,9 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Handlers;
+namespace MarkedEffect\GHPluginUpdater\Handlers;
 
-use MarkedEffect\GithubUpdater\Core\Abstracts;
+use MarkedEffect\GHPluginUpdater\Core\Abstracts;
 
 /**
  * Admin router class

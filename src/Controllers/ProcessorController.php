@@ -11,11 +11,11 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Controllers;
+namespace MarkedEffect\GHPluginUpdater\Controllers;
 
-use MarkedEffect\GithubUpdater\Processors,
-	MarkedEffect\GithubUpdater\Services\ServiceLocator,
-	MarkedEffect\GithubUpdater\Core\Abstracts;
+use MarkedEffect\GHPluginUpdater\Processors,
+	MarkedEffect\GHPluginUpdater\Services\ServiceLocator,
+	MarkedEffect\GHPluginUpdater\Core\Abstracts;
 
 use DI\Attribute\Inject;
 /**

@@ -11,7 +11,7 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Handlers;
+namespace MarkedEffect\GHPluginUpdater\Handlers;
 
 /**
  * Blog router class

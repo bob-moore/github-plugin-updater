@@ -11,12 +11,12 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Providers;
+namespace MarkedEffect\GHPluginUpdater\Providers;
 
 
-use MarkedEffect\GithubUpdater\Core\Abstracts,
-	MarkedEffect\GithubUpdater\Services\UrlResolver,
-	MarkedEffect\GithubUpdater\Services\FilePathResolver;
+use MarkedEffect\GHPluginUpdater\Core\Abstracts,
+	MarkedEffect\GHPluginUpdater\Services\UrlResolver,
+	MarkedEffect\GHPluginUpdater\Services\FilePathResolver;
 
 /**
  * Service class for blocks

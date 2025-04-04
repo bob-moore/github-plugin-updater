@@ -11,9 +11,9 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Services;
+namespace MarkedEffect\GHPluginUpdater\Services;
 
-use MarkedEffect\GithubUpdater\Core\Abstracts;
+use MarkedEffect\GHPluginUpdater\Core\Abstracts;
 
 use DI\Attribute\Inject;
 

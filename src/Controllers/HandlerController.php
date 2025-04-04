@@ -11,12 +11,12 @@
  * @since   1.0.0
  */
 
- namespace MarkedEffect\GithubUpdater\Controllers;
+ namespace MarkedEffect\GHPluginUpdater\Controllers;
 
-use MarkedEffect\GithubUpdater\Services\ServiceLocator,
-	MarkedEffect\GithubUpdater\Handlers,
-	MarkedEffect\GithubUpdater\Core\Interfaces,
-	MarkedEffect\GithubUpdater\Core\Abstracts;
+use MarkedEffect\GHPluginUpdater\Services\ServiceLocator,
+	MarkedEffect\GHPluginUpdater\Handlers,
+	MarkedEffect\GHPluginUpdater\Core\Interfaces,
+	MarkedEffect\GHPluginUpdater\Core\Abstracts;
 
  /**
   * Controls the registration and execution of handlers

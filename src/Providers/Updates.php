@@ -11,11 +11,11 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Providers;
+namespace MarkedEffect\GHPluginUpdater\Providers;
 
 
-use MarkedEffect\GithubUpdater\Core\Abstracts,
-	MarkedEffect\GithubUpdater\Services\RemoteRequest;
+use MarkedEffect\GHPluginUpdater\Core\Abstracts,
+	MarkedEffect\GHPluginUpdater\Services\RemoteRequest;
 
 use DI\Attribute\Inject;
 /**

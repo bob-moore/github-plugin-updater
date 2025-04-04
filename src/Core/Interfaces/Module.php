@@ -11,7 +11,7 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Core\Interfaces;
+namespace MarkedEffect\GHPluginUpdater\Core\Interfaces;
 
 /**
  * Module interface requirements

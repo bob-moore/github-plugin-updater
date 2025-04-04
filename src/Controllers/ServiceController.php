@@ -11,11 +11,11 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Controllers;
+namespace MarkedEffect\GHPluginUpdater\Controllers;
 
-use MarkedEffect\GithubUpdater\Services\ServiceLocator,
-	MarkedEffect\GithubUpdater\Services,
-	MarkedEffect\GithubUpdater\Core\Abstracts;
+use MarkedEffect\GHPluginUpdater\Services\ServiceLocator,
+	MarkedEffect\GHPluginUpdater\Services,
+	MarkedEffect\GHPluginUpdater\Core\Abstracts;
 
 /**
  * Controls the registration and execution of services

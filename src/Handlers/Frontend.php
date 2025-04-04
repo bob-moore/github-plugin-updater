@@ -11,10 +11,10 @@
  * @since   1.0.0
  */
 
-namespace MarkedEffect\GithubUpdater\Handlers;
+namespace MarkedEffect\GHPluginUpdater\Handlers;
 
-use MarkedEffect\GithubUpdater\Core\Abstracts,
-	MarkedEffect\GithubUpdater\Services;
+use MarkedEffect\GHPluginUpdater\Core\Abstracts,
+	MarkedEffect\GHPluginUpdater\Services;
 
 /**
  * Frontend router class
