@@ -3,7 +3,7 @@
     "description": "GitHub Updater for WordPress",
     "type": "library",
     "version": "0.1.0",
-    "license": "GPL-2.0+ <http://www.gnu.org/licenses/gpl-2.0.txt>",
+    "license": "GPL-2.0-or-later",
     "minimum-stability": "dev",
     "prefer-stable": true,
     "config": {
