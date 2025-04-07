@@ -15,9 +15,9 @@ namespace MarkedEffect\GHPluginUpdater\Providers;
 
 
 use MarkedEffect\GHPluginUpdater\Core\Abstracts,
-	MarkedEffect\GHPluginUpdater\Services\UrlResolver,
-	MarkedEffect\GHPluginUpdater\Services\FilePathResolver;
+	MarkedEffect\GHPluginUpdater\Services\RemoteRequest;
 
+use DI\Attribute\Inject;
 /**
  * Service class for blocks
  *
@@ -25,6 +25,20 @@ use MarkedEffect\GHPluginUpdater\Core\Abstracts,
  */
 class PluginInfo extends Abstracts\Module
 {
+	#[Inject([
+		'slug' => 'config.slug',
+		'file' => 'config.file',
+		'package'     => 'config.package',
+	])]
+	public function __construct(
+		protected RemoteRequest $remote_request,
+		protected string $slug,
+		protected string $file,
+		string $package = '',
+	)
+	{
+		parent::__construct( $package );
+	}
 	/**
 		* Filters the plugins_api() response.
 		*
@@ -36,21 +50,21 @@ class PluginInfo extends Abstracts\Module
 		*/
 	public function pluginInfo( false|object|array $result, string $action, object $args ): false|object|array
 	{
-		// if ( 'plugin_information' !== $action ) {
-		// 				return $result;
-		// }
+		if ( 'plugin_information' !== $action ) {
+			return $result;
+		}
 
-		// if ( empty( $args->slug ) || $this->slug !== $args->slug ) {
-		// 				return $result;
-		// }
+		if ( empty( $args->slug ) || $this->slug !== $args->slug ) {
+			return $result;
+		}
 
-		// $response = $this->checkUpdates();
+		$response = (object)$this->remote_request->getPluginInfo();
 
-		// if ( ! $response ) {
-		// 				return $result;
-		// }
+		if ( ! $response ) {
+			return $result;
+		}
 
-		// $response->version = $response->new_version;
+		$response->version = $response->new_version;
 
 		// $readme = $this->requestRawContent( 'readme.md' );
 
@@ -59,7 +73,9 @@ class PluginInfo extends Abstracts\Module
 		// $sections = ReadmeParser::parseSections( $readme );
 
 		// do_action( 'qm/debug', $sections );
-		// $response->sections = $sections;
+		$response->sections = [
+			'description' => 'Placeholder'
+		];
 		// $response->sections = (array) $data->sections;
 
 		return $response;

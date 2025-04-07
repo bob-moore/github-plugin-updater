@@ -63,27 +63,15 @@ class Main
 	 *
 	 * @return void
 	 */
-	private function registerConfig( array $config ): void
-	{
-		if ( ! is_file( $this->root_file ) ) {
-			return;
-		}
-
-		$this->service_locator->addDefinitions(
+	private function registerConfig(array $config): void
+    {
+        if (!is_file($this->root_file)) {
+            return;
+        }
+        $this->service_locator->addDefinitions(
 			wp_parse_args(
 				$config,
-				[
-					'config.dir'     => plugin_dir_path( $this->root_file ),
-					'config.url'     => plugin_dir_url( $this->root_file ),
-					'config.package' => Helpers::slugify( basename( dirname( $this->root_file ) ) ),
-					'config.file'    => basename( $this->root_file ),
-					'config.slug'    => basename( dirname( $this->root_file ) ),
-					'config.banners' => [],
-					'config.icons'   => [],
-					'github.user'    => '',
-					'github.repo'    => '',
-					'github.branch'  => 'main',
-				],
+				$this->pluginArgs( $this->root_file ),
 				[
 					Controllers\ProcessorController::class => ServiceLocator::autowire(),
 					Controllers\ServiceController::class   => ServiceLocator::autowire(),
@@ -91,7 +79,39 @@ class Main
 				]
 			)
 		);
-	}
+    }
+    /**
+     * Get the plugin arguments
+     *
+     * @param string $file : path to the root file of the plugin.
+     *
+     * @return array<string, mixed>
+     */
+    protected function pluginArgs( string $file ): array
+    {
+        if (!is_file($this->root_file)) {
+            return [];
+        }
+
+        $plugin_headers = get_file_data( $file, [
+            'plugin_uri' => 'Plugin URI',
+            'version'    => 'Version',
+        ] );
+
+        return [
+            'config.dir'     => plugin_dir_path( $this->root_file ),
+            'config.url'     => plugin_dir_url( $this->root_file ),
+            'config.package' => Helpers::slugify( basename( dirname( $this->root_file ) ) ),
+            'config.file'    => basename( $this->root_file ),
+            'config.slug'    => basename( dirname( $this->root_file ) ),
+            'config.banners' => [],
+            'config.icons'   => [],
+            'config.version' => $plugin_headers['version'],
+            'github.user'    => '',
+            'github.repo'    => '',
+            'github.branch'  => 'main',
+        ];
+    }
 	/**
 	 * Fire Mounted action on mount
 	 *
