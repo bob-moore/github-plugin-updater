@@ -4,20 +4,22 @@
  *
  * PHP Version 8.2
  *
- * @package mwf_cornerstone
- * @author  Bob Moore <bob.moore@midwestfamilymadison.com>
+ * @package github_updater
+ * @author  Bob Moore <bob@bobmoore.dev>
  * @license GPL-2.0+ <http://www.gnu.org/licenses/gpl-2.0.txt>
- * @link    https://www.midwestfamilymadison.com
- * @since   1.0.0
+ * @link    https://github.com/bob-moore/github-plugin-updater
+ * @since   0.1.0
  */
 
 namespace MarkedEffect\GHPluginUpdater\Providers;
 
 
 use MarkedEffect\GHPluginUpdater\Core\Abstracts,
+	MarkedEffect\GHPluginUpdater\Services\ReadmeParser,
 	MarkedEffect\GHPluginUpdater\Services\RemoteRequest;
 
 use DI\Attribute\Inject;
+
 /**
  * Service class for blocks
  *
@@ -32,6 +34,7 @@ class PluginInfo extends Abstracts\Module
 	])]
 	public function __construct(
 		protected RemoteRequest $remote_request,
+		protected ReadmeParser $readme_parser,
 		protected string $slug,
 		protected string $file,
 		string $package = '',
@@ -66,11 +69,11 @@ class PluginInfo extends Abstracts\Module
 
 		$response->version = $response->new_version;
 
-		// $readme = $this->requestRawContent( 'readme.md' );
+		$readme = $this->remote_request->requestRawContent( 'readme.md' );
 
 		// $Parsedown = new Parsedown();
 
-		// $sections = ReadmeParser::parseSections( $readme );
+		$sections = $this->readme_parser->parseSections( $readme );
 
 		// do_action( 'qm/debug', $sections );
 		$response->sections = [

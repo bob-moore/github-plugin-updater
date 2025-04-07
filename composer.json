@@ -41,6 +41,7 @@
         "phpcsstandards/phpcsutils": "^1.0"
     },
     "require": {
-        "php-di/php-di": "*"
+        "php-di/php-di": "*",
+        "erusev/parsedown": "^1.7"
     }
 }
