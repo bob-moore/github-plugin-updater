@@ -33,11 +33,6 @@ class PluginHeaders extends Abstracts\Module
 		'requires'        => 'Requires at least',
 		'tested'          => 'Tested up to',
 		'requires_php'    => 'Requires PHP',
-		'github_uri'      => 'Github URI',
-		'branch'          => 'Branch',
-		'low_banner_url'  => 'Low Banner',
-		'high_banner_url' => 'High Banner',
-		'icon_url'        => 'Icon',
 	];
 	/**
 	 * The default headers to look for in the file.
@@ -80,6 +75,7 @@ class PluginHeaders extends Abstracts\Module
 		$context = ''
 	): array
     {
+        $default_headers = array_merge(self::PLUGIN_HEADERS, $default_headers);
         /**
          * If passed a file, use the default WP function to get the file data.
          */

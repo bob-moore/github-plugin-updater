@@ -23,15 +23,26 @@ use DI\Attribute\Inject;
  *
  * @subpackage Services
  */
-#[Inject([
-    'github_user' => 'github.user',
-    'github_repo' => 'github.repo',
-    'branch'      => 'github.branch',
-    'plugin_file' => 'config.file',
-    'package'     => 'config.package',
-])]
+
 class RemoteRequest extends Abstracts\Module
 {
+    /**
+     * Public constructor.
+     *
+     * @param PluginHeaders $plugin_header_processor The plugin header processor.
+     * @param string        $github_user            The github user.
+     * @param string        $github_repo            The github repo.
+     * @param string        $branch                 The branch to use.
+     * @param string        $plugin_file            The plugin file.
+     * @param string        $package                The package name.
+     */
+    #[Inject([
+        'github_user' => 'github.user',
+        'github_repo' => 'github.repo',
+        'branch'      => 'github.branch',
+        'plugin_file' => 'config.file',
+        'package'     => 'config.package',
+    ])]
     public function __construct(
         protected PluginHeaders $plugin_header_processor,
         protected string $github_user = '',

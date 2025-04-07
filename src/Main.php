@@ -51,6 +51,7 @@ class Main
 			$this->registerConfig( $config );
 			$this->service_locator->build();
 			$this->service_locator->save();
+			$this->mount();
 		} else {
 			$this->service_locator->restoreContainer();
 		}
