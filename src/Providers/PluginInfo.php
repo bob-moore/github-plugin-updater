@@ -76,9 +76,7 @@ class PluginInfo extends Abstracts\Module
 		$sections = $this->readme_parser->parseSections( $readme );
 
 		// do_action( 'qm/debug', $sections );
-		$response->sections = [
-			'description' => 'Placeholder'
-		];
+		$response->sections = $sections;
 		// $response->sections = (array) $data->sections;
 
 		return $response;
