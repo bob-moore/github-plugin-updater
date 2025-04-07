@@ -28,12 +28,14 @@ class Updates extends Abstracts\Module
 	#[Inject([
 		'version'     => 'config.version',
 		'plugin_slug' => 'config.slug',
+		'plugin_file' => 'config.file',
 		'package'     => 'config.package',
 	])]
 	public function __construct(
 		protected RemoteRequest $remote_request,
 		protected string $version,
 		protected string $plugin_slug,
+		protected string $plugin_file,
 		string $package = '',
 	)
 	{
@@ -104,7 +106,7 @@ class Updates extends Abstracts\Module
 			return $transient;
 		}
 
-		$transient->response[ $this->plugin_slug ] = $updates;
+		$transient->response[ "{$this->plugin_slug}/{$this->plugin_file}" ] = $updates;
 
 		return $transient;
 	}
