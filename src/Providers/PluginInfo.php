@@ -53,32 +53,29 @@ class PluginInfo extends Abstracts\Module
 		*/
 	public function pluginInfo( false|object|array $result, string $action, object $args ): false|object|array
 	{
-		if ( 'plugin_information' !== $action ) {
-			return $result;
-		}
+        if ('plugin_information' !== $action) {
+            return $result;
+        }
+        if (empty($args->slug) || $this->slug !== $args->slug) {
+            return $result;
+        }
+        
+        $response = $this->remote_request->getPluginInfo();
 
-		if ( empty( $args->slug ) || $this->slug !== $args->slug ) {
-			return $result;
-		}
+        $response['new_version'] = $response['version'];
+        
+        if (!$response) {
+            return $result;
+        }
 
-		$response = (object)$this->remote_request->getPluginInfo();
+        $response = (object) apply_filters("{$this->package}_update_response", $response);
 
-		if ( ! $response ) {
-			return $result;
-		}
+        $readme = $this->remote_request->requestRawContent('readme.md');
 
-		$response->version = $response->new_version;
+        $sections = $this->readme_parser->parseSections($readme);
 
-		$readme = $this->remote_request->requestRawContent( 'readme.md' );
+        $response->sections = $sections;
 
-		// $Parsedown = new Parsedown();
-
-		$sections = $this->readme_parser->parseSections( $readme );
-
-		// do_action( 'qm/debug', $sections );
-		$response->sections = $sections;
-		// $response->sections = (array) $data->sections;
-
-		return $response;
+        return $response;
 	}
 }
