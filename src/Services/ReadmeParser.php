@@ -22,59 +22,64 @@ use League\CommonMark\CommonMarkConverter;
  *
  * @subpackage Services
  */
-
 class ReadmeParser extends Abstracts\Module
 {
-    public function __construct(
-        protected CommonMarkConverter $markdown_parser,
-        string $package = '',
-    ) {
-        parent::__construct( $package );
-    }
-    /**
-     * Parse markdown content into sections
-     * 
-     * @param string $markdown The markdown content to parse
-     * @return array Associative array of sections with H1 titles as keys
-     */
-    public function parseSections( string $markdown ): array
-    {
-        // Initialize sections array
-        $sections = [];
+	/**
+	 * Public constructor
+	 *
+	 * @param CommonMarkConverter $markdown_parser : markdown parser.
+	 * @param string              $package         : package name.
+	 */
+	public function __construct(
+		protected CommonMarkConverter $markdown_parser,
+		string $package = '',
+	) {
+		parent::__construct( $package );
+	}
+	/**
+	 * Parse markdown content into sections
+	 *
+	 * @param string $markdown The markdown content to parse.
+	 * @return array<string, string> Associative array of sections with H1 titles as keys.
+	 */
+	public function parseSections( string $markdown ): array
+	{
+		// Initialize sections array.
+		$sections = [];
 
-        // Split content by lines
-        $lines = explode( "\n", $markdown );
+		// Split content by lines.
+		$lines = explode( "\n", $markdown );
 
-        $currentSection = null;
-        $currentContent = [];
-        $inSection = false;
+		$current_section = null;
+		$current_content = [];
+		$in_section = false;
 
-        foreach ( $lines as $line ) {
-            // Check if line is an H1 heading
-            if ( preg_match('/^# (.+)$/', $line, $matches ) ) {
-                // If we were already in a section, save it
-                if ($inSection && $currentSection !== null) {
-                    $sections[$currentSection] = $this->markdown_parser->convert( trim( implode("\n", $currentContent) ) );
-                    $currentContent = [];
-                }
+		foreach ( $lines as $line ) {
+			// Check if line is an H1 heading.
+			if ( preg_match( '/^# (.+)$/', $line, $matches ) ) {
+				// If we were already in a section, save it.
+				if ( $in_section && ( null !== $current_section ) ) {
+					$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) );
+					$current_content = [];
+				}
 
-                // Set the new current section
-                $currentSection = trim($matches[1]);
-                $inSection = true;
-                continue;
-            }
+				// Set the new current section.
+				$current_section = trim( $matches[1] );
+				$in_section = true;
+				continue;
+			}
 
-            // If we're in a section, collect the content
-            if ($inSection) {
-                $currentContent[] = $line;
-            }
-        }
+			// If we're in a section, collect the content.
+			if ( $in_section ) {
+				$current_content[] = $line;
+			}
+		}
 
-        // Save the last section if there is one
-        if ($inSection && $currentSection !== null) {
-            $sections[$currentSection] = $this->markdown_parser->convert( trim( implode("\n", $currentContent) ) );
-        }
+		// Save the last section if there is one.
+		if ( $in_section && ( null !== $current_section ) ) {
+			$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) );
+		}
 
-        return $sections;
-    }
+		return $sections;
+	}
 }

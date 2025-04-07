@@ -32,7 +32,10 @@ abstract class Controller extends Module implements Interfaces\Controller, Inter
 	/**
 	 * Public constructor
 	 *
-	 * Adds function to the onMount action, to further execute the mountActions and mountFilters functions.
+	 * Adds function to the onMount action, to further execute the mountActions
+	 * and mountFilters functions.
+	 *
+	 * @param string $package : package name.
 	 */
 	public function __construct( string $package = '' )
 	{

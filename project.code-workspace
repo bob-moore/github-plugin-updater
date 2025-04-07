@@ -1,0 +1,23 @@
+        {
+            "folders": [
+                {
+                    "path": "."
+                }
+            ],
+            "settings": {
+                "intelephense.environment.includePaths" : [],
+                "phpcs.enable": true,
+                "phpcs.standard": "./tests/phpcs.xml",
+                "phpcs.executablePath": "./vendor/bin/phpcs",
+                "phpcs.showWarnings": true,
+                "phpcs.showSources": true,
+                "phpcs.composerJsonPath": "./composer.json",
+                "phpcs.errorSeverity": 6,
+                "php.suggest.basic": true,
+                "git.ignoreLimitWarning": true,
+                "editor.rulers": [
+                    80,
+                    120
+                ]
+            }
+        }

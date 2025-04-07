@@ -13,7 +13,6 @@
 
 namespace MarkedEffect\GHPluginUpdater\Providers;
 
-
 use MarkedEffect\GHPluginUpdater\Core\Abstracts,
 	MarkedEffect\GHPluginUpdater\Services\RemoteRequest;
 
@@ -25,20 +24,30 @@ use DI\Attribute\Inject;
  */
 class Updates extends Abstracts\Module
 {
-	#[Inject([
-		'version'     => 'config.version',
-		'plugin_slug' => 'config.slug',
-		'plugin_file' => 'config.file',
-		'package'     => 'config.package',
-	])]
+	/**
+	 * Public constructor.
+	 *
+	 * @param RemoteRequest $remote_request The remote request service.
+	 * @param string        $version        The plugin version.
+	 * @param string        $plugin_slug    The plugin slug.
+	 * @param string        $plugin_file    The plugin file.
+	 * @param string        $package        The package name.
+	 */
+	#[Inject(
+		[
+			'version'     => 'config.version',
+			'plugin_slug' => 'config.slug',
+			'plugin_file' => 'config.file',
+			'package'     => 'config.package',
+		]
+	)]
 	public function __construct(
 		protected RemoteRequest $remote_request,
 		protected string $version,
 		protected string $plugin_slug,
 		protected string $plugin_file,
 		string $package = '',
-	)
-	{
+	) {
 		parent::__construct( $package );
 	}
 	/**
@@ -53,7 +62,7 @@ class Updates extends Abstracts\Module
 		 * Check if the plugin version has bumped on the github repo,
 		 * and that the new version requirements are met.
 		 */
-		if ( 
+		if (
 			! version_compare( $this->version, $remote['version'], '<' )
 			|| ! version_compare( $remote['requires'], get_bloginfo( 'version' ), '<=' )
 			|| ! version_compare( $remote['requires_php'], PHP_VERSION, '<' )
@@ -90,13 +99,17 @@ class Updates extends Abstracts\Module
 	/**
 	 * Filters the update transient.
 	 *
-	 * @param object $transient The transient object.
+	 * @param mixed $transient The transient object.
 	 *
-	 * @return object
+	 * @return mixed
 	 */
 	public function update( mixed $transient ): mixed
 	{
-		if ( ! is_object( $transient ) || empty( $transient->checked ) ) {
+		if (
+			! is_object( $transient )
+			|| empty( $transient->checked )
+			|| ! isset( $transient->response )
+		) {
 			return $transient;
 		}
 
@@ -117,7 +130,7 @@ class Updates extends Abstracts\Module
 	 *
 	 * @return string|null The package URL or null if not found.
 	 */
- 	protected function getReleaseZip( object $release ): ?string
+	protected function getReleaseZip( object $release ): ?string
 	{
 		$assets = $release->assets;
 

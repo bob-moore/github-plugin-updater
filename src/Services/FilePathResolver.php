@@ -35,10 +35,10 @@ class FilePathResolver extends Abstracts\Module
 	 *
 	 * @param string $root_dir : root path of the plugin.
 	 * @param string $package : optional package name.
-	 * 
+	 *
 	 * @see https://php-di.org/doc/attributes.html
 	 */
-	#[Inject(['root_dir' => 'config.dir'])]
+	#[Inject( [ 'root_dir' => 'config.dir' ] )]
 	public function __construct( string $root_dir, string $package = '' )
 	{
 		$this->dir = trim( untrailingslashit( $root_dir ) );

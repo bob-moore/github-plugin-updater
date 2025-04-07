@@ -34,17 +34,17 @@ class Main
 	/**
 	 * Public constructor
 	 *
-	 * @param string $root_file : path to the root file of the plugin.
+	 * @param string               $root_file : path to the root file of the plugin.
 	 * @param array<string, mixed> $config : optional configuration array.
 	 */
 	public function __construct(
 		protected string $root_file = '',
 		array $config = []
-	)
-	{
+	) {
 		$this->service_locator = new ServiceLocator();
 
-		if ( ! $this->service_locator->hasContainer()
+		if (
+			! $this->service_locator->hasContainer()
 			&& is_file( $this->root_file )
 		) {
 			$this->service_locator->init();
@@ -63,15 +63,15 @@ class Main
 	 *
 	 * @return void
 	 */
-	private function registerConfig(array $config): void
-    {
-        if (!is_file($this->root_file)) {
-            return;
-        }
-        $this->service_locator->addDefinitions(
-			wp_parse_args(
-				$config,
+	private function registerConfig( array $config ): void
+	{
+		if ( ! is_file( $this->root_file ) ) {
+			return;
+		}
+		$this->service_locator->addDefinitions(
+			array_merge(
 				$this->pluginArgs( $this->root_file ),
+				$config,
 				[
 					Controllers\ProcessorController::class => ServiceLocator::autowire(),
 					Controllers\ServiceController::class   => ServiceLocator::autowire(),
@@ -79,39 +79,42 @@ class Main
 				]
 			)
 		);
-    }
-    /**
-     * Get the plugin arguments
-     *
-     * @param string $file : path to the root file of the plugin.
-     *
-     * @return array<string, mixed>
-     */
-    protected function pluginArgs( string $file ): array
-    {
-        if (!is_file($this->root_file)) {
-            return [];
-        }
+	}
+	/**
+	 * Get the plugin arguments
+	 *
+	 * @param string $file : path to the root file of the plugin.
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function pluginArgs( string $file ): array
+	{
+		if ( ! is_file( $this->root_file ) ) {
+			return [];
+		}
 
-        $plugin_headers = get_file_data( $file, [
-            'plugin_uri' => 'Plugin URI',
-            'version'    => 'Version',
-        ] );
+		$plugin_headers = get_file_data(
+			$file,
+			[
+				'plugin_uri' => 'Plugin URI',
+				'version'    => 'Version',
+			]
+		);
 
-        return [
-            'config.dir'     => plugin_dir_path( $this->root_file ),
-            'config.url'     => plugin_dir_url( $this->root_file ),
-            'config.package' => Helpers::slugify( basename( dirname( $this->root_file ) ) ),
-            'config.file'    => basename( $this->root_file ),
-            'config.slug'    => basename( dirname( $this->root_file ) ),
-            'config.banners' => [],
-            'config.icons'   => [],
-            'config.version' => $plugin_headers['version'],
-            'github.user'    => '',
-            'github.repo'    => '',
-            'github.branch'  => 'main',
-        ];
-    }
+		return [
+			'config.dir'     => plugin_dir_path( $this->root_file ),
+			'config.url'     => plugin_dir_url( $this->root_file ),
+			'config.package' => Helpers::slugify( basename( dirname( $this->root_file ) ) ),
+			'config.file'    => basename( $this->root_file ),
+			'config.slug'    => basename( dirname( $this->root_file ) ),
+			'config.banners' => [],
+			'config.icons'   => [],
+			'config.version' => $plugin_headers['version'],
+			'github.user'    => '',
+			'github.repo'    => '',
+			'github.branch'  => 'main',
+		];
+	}
 	/**
 	 * Fire Mounted action on mount
 	 *
@@ -132,20 +135,20 @@ class Main
 	 *
 	 * @return mixed
 	 */
-	// public static function locateService( string $service ): mixed
-	// {
-	// 	try {
-	// 		$instance = new self();
+	public static function locateService( string $service ): mixed
+	{
+		try {
+			$instance = new self();
 
-	// 		$resolved = $instance->service_locator->getService( $service );
+			$resolved = $instance->service_locator->getService( $service );
 
-	// 		if ( is_wp_error( $resolved ) ) {
-	// 			$resolved = $instance->service_locator->getService( __NAMESPACE__ . '\\' . $service );
-	// 		}
+			if ( is_wp_error( $resolved ) ) {
+				$resolved = $instance->service_locator->getService( __NAMESPACE__ . '\\' . $service );
+			}
 
-	// 		return $resolved;
-	// 	} catch ( \Exception $e ) {
-	// 		return new \WP_Error( $e->getMessage() );
-	// 	}
-	// }
+			return $resolved;
+		} catch ( \Exception $e ) {
+			return new \WP_Error( $e->getMessage() );
+		}
+	}
 }

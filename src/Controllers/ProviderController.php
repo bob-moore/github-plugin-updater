@@ -4,8 +4,7 @@
  *
  * PHP Version 8.2
  *
- * @package mwf_canvas
- * @category Controller
+ * @package github_updater
  * @author  Bob Moore <bob@bobmoore.dev>
  * @license GPL-2.0+ <http://www.gnu.org/licenses/gpl-2.0.txt>
  * @link    https://github.com/bob-moore/github-plugin-updater
@@ -24,7 +23,7 @@ use DI\Attribute\Inject;
 /**
  * Controls the registration and execution of providers
  *
- * @category Controller
+ * @category Controllers
  */
 class ProviderController extends Abstracts\Controller
 {
@@ -36,8 +35,8 @@ class ProviderController extends Abstracts\Controller
 	public static function getServiceDefinitions(): array
 	{
 		return [
-			Providers\PluginInfo::class        => ServiceLocator::autowire(),
-			Providers\Updates::class       => ServiceLocator::autowire(),
+			Providers\PluginInfo::class => ServiceLocator::autowire(),
+			Providers\Updates::class    => ServiceLocator::autowire(),
 		];
 	}
 
@@ -52,7 +51,6 @@ class ProviderController extends Abstracts\Controller
 	public function mountPluginInfoProvider( Providers\PluginInfo $provider ): void
 	{
 		add_filter( 'plugins_api', [ $provider, 'pluginInfo' ], 20, 3 );
-		
 	}
 
 	/**

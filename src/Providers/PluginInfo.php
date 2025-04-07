@@ -13,7 +13,6 @@
 
 namespace MarkedEffect\GHPluginUpdater\Providers;
 
-
 use MarkedEffect\GHPluginUpdater\Core\Abstracts,
 	MarkedEffect\GHPluginUpdater\Services\ReadmeParser,
 	MarkedEffect\GHPluginUpdater\Services\RemoteRequest;
@@ -27,55 +26,66 @@ use DI\Attribute\Inject;
  */
 class PluginInfo extends Abstracts\Module
 {
-	#[Inject([
-		'slug' => 'config.slug',
-		'file' => 'config.file',
-		'package'     => 'config.package',
-	])]
+	/**
+	 * Public constructor.
+	 *
+	 * @param RemoteRequest $remote_request The remote request service.
+	 * @param ReadmeParser  $readme_parser  The readme parser service.
+	 * @param string        $slug           The plugin slug.
+	 * @param string        $file           The plugin file.
+	 * @param string        $package        The package name.
+	 */
+	#[Inject(
+		[
+			'slug' => 'config.slug',
+			'file' => 'config.file',
+			'package'     => 'config.package',
+		]
+	)]
 	public function __construct(
 		protected RemoteRequest $remote_request,
 		protected ReadmeParser $readme_parser,
 		protected string $slug,
 		protected string $file,
 		string $package = '',
-	)
-	{
+	) {
 		parent::__construct( $package );
 	}
 	/**
-		* Filters the plugins_api() response.
-		*
-		* @param false|object|array $result The result object or array. Default false.
-		* @param string             $action The type of information being requested from the Plugin Installation API.
-		* @param object             $args Plugin API arguments.
-		*
-		* @return false|object|array
-		*/
+	 * Filters the plugins_api() response.
+	 *
+	 * @param false|object|array<string, mixed> $result The result object or array. Default false.
+	 * @param string                            $action The type of information being requested from the Plugin Installation API.
+	 * @param object                            $args Plugin API arguments.
+	 *
+	 * @return false|object|array<string, mixed>
+	 */
 	public function pluginInfo( false|object|array $result, string $action, object $args ): false|object|array
 	{
-        if ('plugin_information' !== $action) {
-            return $result;
-        }
-        if (empty($args->slug) || $this->slug !== $args->slug) {
-            return $result;
-        }
-        
-        $response = $this->remote_request->getPluginInfo();
+		if ( 'plugin_information' !== $action ) {
+			return $result;
+		}
+		if ( empty( $args->slug ) || $this->slug !== $args->slug ) {
+			return $result;
+		}
 
-        $response['new_version'] = $response['version'];
-        
-        if (!$response) {
-            return $result;
-        }
+		$response = $this->remote_request->getPluginInfo();
 
-        $response = (object) apply_filters("{$this->package}_update_response", $response);
 
-        $readme = $this->remote_request->requestRawContent('readme.md');
+		if ( ! $response ) {
+			return $result;
+		}
 
-        $sections = $this->readme_parser->parseSections($readme);
+		$response['new_version'] = $response['version'];
 
-        $response->sections = $sections;
+		$response = (object) apply_filters( "{$this->package}_update_response", $response );
 
-        return $response;
+		$readme = $this->remote_request->requestRawContent( 'readme.md' );
+
+		$sections = $this->readme_parser->parseSections( $readme );
+
+		$response->sections = $sections;
+
+		return $response;
 	}
 }

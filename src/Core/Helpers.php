@@ -224,11 +224,11 @@ class Helpers
 	}
 	/**
 	 * Hyphenate a string
-	 * 
+	 *
 	 * Replaces spaces, underscores, and slashes with hyphens and converts to lowercase.
 	 * Used to convert class names to CSS class names.
 	 *
-	 * @param string $raw_string
+	 * @param string $raw_string string to hyphenate.
 	 *
 	 * @return string
 	 */

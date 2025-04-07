@@ -23,13 +23,13 @@
         }
     },
     "scripts": {
-        "phpstan": "vendor/bin/phpstan analyze -c dev/tests/phpstan/phpstan.neon --memory-limit=2048M",
-        "phpsniff": "vendor/bin/phpcs inc -v --standard='dev/tests/phpcs.xml'",
-        "phpsniff:fix": "vendor/bin/phpcbf inc -v --standard='dev/tests/phpcs.xml'",
-        "phpsniff:default": "vendor/bin/phpcs inc -v",
-        "phpsniff:PSR12": "vendor/bin/phpcs inc -v --standard='PSR12'",
-        "phpsniff:PSR2": "vendor/bin/phpcs inc -v --standard='PSR2'",
-        "phpsniff:WP": "vendor/bin/phpcs inc -v --standard='WordPress'"
+        "phpstan": "vendor/bin/phpstan analyze -c tests/phpstan.neon --memory-limit=2048M",
+        "phpsniff": "vendor/bin/phpcs src -v --standard='tests/phpcs.xml'",
+        "phpsniff:fix": "vendor/bin/phpcbf src -v --standard='tests/phpcs.xml'",
+        "phpsniff:default": "vendor/bin/phpcs src -v",
+        "phpsniff:PSR12": "vendor/bin/phpcs src -v --standard='PSR12'",
+        "phpsniff:PSR2": "vendor/bin/phpcs src -v --standard='PSR2'",
+        "phpsniff:WP": "vendor/bin/phpcs src -v --standard='WordPress'"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^3.7",

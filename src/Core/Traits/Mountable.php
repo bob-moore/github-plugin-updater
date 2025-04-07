@@ -77,5 +77,6 @@ trait Mountable {
 	 *
 	 * @return void
 	 */
-	public function mount(): void {}
+	public function mount(): void {
+	}
 }

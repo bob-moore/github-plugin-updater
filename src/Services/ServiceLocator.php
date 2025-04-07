@@ -70,6 +70,11 @@ class ServiceLocator
 		$this->container_builder->useAutowiring( true );
 		$this->container_builder->useAttributes( true );
 	}
+	/**
+	 * Check if a container has been cached
+	 *
+	 * @return bool
+	 */
 	public function hasContainer(): bool
 	{
 		return isset( self::$cached_container );
@@ -156,8 +161,10 @@ class ServiceLocator
 				$definition->method( 'onMount' );
 			}
 
-			if ( is_a( $class_name, Interfaces\Controller::class, true )
-				&& empty( array_column( $this->service_definitions, $service ) ) ) {
+			if (
+				is_a( $class_name, Interfaces\Controller::class, true )
+				&& empty( array_column( $this->service_definitions, $service ) )
+			) {
 				$extended_definitions = $class_name::getServiceDefinitions();
 			}
 		}
