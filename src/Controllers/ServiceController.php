@@ -32,11 +32,11 @@ class ServiceController extends Abstracts\Controller
 	public static function getServiceDefinitions(): array
 	{
 		return [
-			Services\FilePathResolver::class => ServiceLocator::autowire(),
-			Services\UrlResolver::class      => ServiceLocator::autowire(),
-			Services\RemoteRequest::class    => ServiceLocator::autowire(),
-			Services\ReadmeParser::class     => ServiceLocator::autowire(),
-			\Parsedown::class                => ServiceLocator::autowire(),
+			Services\FilePathResolver::class              => ServiceLocator::autowire(),
+			Services\UrlResolver::class                   => ServiceLocator::autowire(),
+			Services\RemoteRequest::class                 => ServiceLocator::autowire(),
+			Services\ReadmeParser::class                  => ServiceLocator::autowire(),
+			\League\CommonMark\CommonMarkConverter::class => ServiceLocator::autowire(),
 		];
 	}
 }

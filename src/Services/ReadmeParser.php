@@ -15,7 +15,7 @@ namespace MarkedEffect\GHPluginUpdater\Services;
 
 use MarkedEffect\GHPluginUpdater\Core\Abstracts;
 
-use Parsedown;
+use League\CommonMark\CommonMarkConverter;
 
 /**
  * Class for parsing readme files
@@ -26,7 +26,7 @@ use Parsedown;
 class ReadmeParser extends Abstracts\Module
 {
     public function __construct(
-        protected Parsedown $parsedown,
+        protected CommonMarkConverter $markdown_parser,
         string $package = '',
     ) {
         parent::__construct( $package );
@@ -54,7 +54,7 @@ class ReadmeParser extends Abstracts\Module
             if ( preg_match('/^# (.+)$/', $line, $matches ) ) {
                 // If we were already in a section, save it
                 if ($inSection && $currentSection !== null) {
-                    $sections[$currentSection] = $this->parsedown->text( trim( implode("\n", $currentContent) ) );
+                    $sections[$currentSection] = $this->markdown_parser->convert( trim( implode("\n", $currentContent) ) );
                     $currentContent = [];
                 }
 
@@ -72,7 +72,7 @@ class ReadmeParser extends Abstracts\Module
 
         // Save the last section if there is one
         if ($inSection && $currentSection !== null) {
-            $sections[$currentSection] = $this->parsedown->text( trim( implode("\n", $currentContent) ) );
+            $sections[$currentSection] = $this->markdown_parser->convert( trim( implode("\n", $currentContent) ) );
         }
 
         return $sections;
