@@ -51,7 +51,8 @@ class ProviderController extends Abstracts\Controller
 	#[Inject]
 	public function mountPluginInfoProvider( Providers\PluginInfo $provider ): void
 	{
-		// add_action( 'plugins_loaded', [ $provider, 'dispatch' ], 4 );
+		add_filter( 'plugins_api', [ $provider, 'pluginInfo' ], 20, 3 );
+		
 	}
 
 	/**
@@ -64,6 +65,6 @@ class ProviderController extends Abstracts\Controller
 	#[Inject]
 	public function mountUpdatesProvider( Providers\Updates $provider ): void
 	{
-		
+		add_filter( 'site_transient_update_plugins', [ $provider, 'update' ] );
 	}
 }

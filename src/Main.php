@@ -86,6 +86,7 @@ class Main
 				[
 					Controllers\ProcessorController::class => ServiceLocator::autowire(),
 					Controllers\ServiceController::class   => ServiceLocator::autowire(),
+					Controllers\ProviderController::class  => ServiceLocator::autowire(),
 				]
 			)
 		);
@@ -99,6 +100,7 @@ class Main
 	{
 		$this->service_locator->getService( Controllers\ProcessorController::class );
 		$this->service_locator->getService( Controllers\ServiceController::class );
+		$this->service_locator->getService( Controllers\ProviderController::class );
 	}
 	/**
 	 * Locate a specific service
