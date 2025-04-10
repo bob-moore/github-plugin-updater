@@ -2,7 +2,7 @@
     "name": "marked-effect/github-plugin-updater",
     "description": "GitHub Updater for WordPress",
     "type": "library",
-    "version": "0.1.2",
+    "version": "0.1.1",
     "license": "GPL-2.0-or-later",
     "minimum-stability": "dev",
     "prefer-stable": true,
