@@ -4,7 +4,7 @@
  *
  * PHP Version 8.2
  *
- * @package mwf_canvas
+ * @package github_plugin_updater
  * @author  Bob Moore <bob@bobmoore.dev>
  * @license GPL-2.0+ <http://www.gnu.org/licenses/gpl-2.0.txt>
  * @link    https://github.com/bob-moore/github-plugin-updater
@@ -66,9 +66,11 @@ class ServiceLocator
 	 */
 	public function init(): void
 	{
-		$this->container_builder = new ContainerBuilder();
-		$this->container_builder->useAutowiring( true );
-		$this->container_builder->useAttributes( true );
+		if ( ! $this->container_builder ) {
+			$this->container_builder = new ContainerBuilder();
+			$this->container_builder->useAutowiring( true );
+			$this->container_builder->useAttributes( true );
+		}
 	}
 	/**
 	 * Check if a container has been cached
@@ -135,6 +137,8 @@ class ServiceLocator
 	 */
 	public function build(): void
 	{
+		$this->init();
+
 		foreach ( $this->service_definitions as $definition ) {
 			$this->container_builder->addDefinitions( $definition );
 		}
@@ -281,11 +285,11 @@ class ServiceLocator
 	/**
 	 * Wrapper for parent auto wire function. Only used for simplicity
 	 *
-	 * @param string $class_name : name of service to auto wire.
+	 * @param string|null $class_name : name of service to auto wire.
 	 *
 	 * @return Helper\AutowireDefinitionHelper
 	 */
-	public static function autowire( string $class_name = null ): Helper\AutowireDefinitionHelper
+	public static function autowire( ?string $class_name = null ): Helper\AutowireDefinitionHelper
 	{
 		return \DI\autowire( $class_name );
 	}
@@ -295,7 +299,7 @@ class ServiceLocator
 	 * @param string|null $class_name Class name of the object.
 	 *                               If null, the name of the entry (in the container) will be used as class name.
 	 */
-	public static function create( string $class_name = null ): Helper\DefinitionHelper
+	public static function create( ?string $class_name = null ): Helper\DefinitionHelper
 	{
 		return \DI\create( $class_name );
 	}

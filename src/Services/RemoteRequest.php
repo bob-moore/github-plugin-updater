@@ -40,8 +40,8 @@ class RemoteRequest extends Abstracts\Module
 			'github_user' => 'github.user',
 			'github_repo' => 'github.repo',
 			'branch'      => 'github.branch',
-			'plugin_file' => 'config.file',
-			'package'     => 'config.package',
+			'plugin_file' => 'plugin.file',
+			'package'     => 'plugin.package',
 		]
 	)]
 	public function __construct(
@@ -152,7 +152,6 @@ class RemoteRequest extends Abstracts\Module
 		);
 
 		$response = wp_remote_get( $request_url );
-
 
 		if (
 			is_wp_error( $response )

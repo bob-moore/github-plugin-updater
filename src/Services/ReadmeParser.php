@@ -59,7 +59,7 @@ class ReadmeParser extends Abstracts\Module
 			if ( preg_match( '/^# (.+)$/', $line, $matches ) ) {
 				// If we were already in a section, save it.
 				if ( $in_section && ( null !== $current_section ) ) {
-					$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) );
+					$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) )->getContent();
 					$current_content = [];
 				}
 
@@ -77,7 +77,7 @@ class ReadmeParser extends Abstracts\Module
 
 		// Save the last section if there is one.
 		if ( $in_section && ( null !== $current_section ) ) {
-			$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) );
+			$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) )->getContent();
 		}
 
 		return $sections;

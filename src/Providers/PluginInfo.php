@@ -37,9 +37,9 @@ class PluginInfo extends Abstracts\Module
 	 */
 	#[Inject(
 		[
-			'slug' => 'config.slug',
-			'file' => 'config.file',
-			'package'     => 'config.package',
+			'slug' => 'plugin.slug',
+			'file' => 'plugin.file',
+			'package' => 'plugin.package',
 		]
 	)]
 	public function __construct(
@@ -70,7 +70,6 @@ class PluginInfo extends Abstracts\Module
 		}
 
 		$response = $this->remote_request->getPluginInfo();
-
 
 		if ( ! $response ) {
 			return $result;

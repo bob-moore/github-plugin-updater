@@ -36,12 +36,12 @@ class UpdateResponse extends Abstracts\Module
 	 */
 	#[Inject(
 		[
-			'plugin_slug' => 'config.slug',
-			'plugin_file' => 'config.file',
-			'version'     => 'config.version',
-			'icons'       => 'config.icons',
-			'banners'     => 'config.banners',
-			'package'     => 'config.package',
+			'plugin_slug' => 'plugin.slug',
+			'plugin_file' => 'plugin.file',
+			'version'     => 'plugin.version',
+			'icons'       => 'plugin.icons',
+			'banners'     => 'plugin.banners',
+			'package'     => 'plugin.package',
 		]
 	)]
 	public function __construct(

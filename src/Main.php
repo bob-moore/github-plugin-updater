@@ -4,7 +4,7 @@
  *
  * PHP Version 8.2
  *
- * @package mwf_canvas
+ * @package github_plugin_updater
  * @author  Bob Moore <bob@bobmoore.dev>
  * @license GPL-2.0+ <http://www.gnu.org/licenses/gpl-2.0.txt>
  * @link    https://github.com/bob-moore/github-plugin-updater
@@ -39,81 +39,150 @@ class Main
 	 */
 	public function __construct(
 		protected string $root_file = '',
-		array $config = []
+		protected array $config = [],
 	) {
+		/**
+		 * Ensure we have a service locator.
+		 */
 		$this->service_locator = new ServiceLocator();
-
-		if (
-			! $this->service_locator->hasContainer()
-			&& is_file( $this->root_file )
-		) {
-			$this->service_locator->init();
-			$this->registerConfig( $config );
-			$this->service_locator->build();
-			$this->service_locator->save();
-			$this->mount();
-		} else {
+		/**
+		 * If we already have a container, restore it.
+		 */
+		if ( $this->service_locator->hasContainer() ) {
 			$this->service_locator->restoreContainer();
+		}
+		/**
+		 * Else maybe set config and mount the plugin.
+		 */
+		else {
+			/**
+			 * Maybe set the root file based on file path.
+			 */
+			if ( empty( $this->root_file ) 
+				|| ! is_file( $this->root_file )
+			) {
+				$this->setRootFile( $this->getRootFileFromPath() );
+			}
+			/**
+			 * Merged passed in config with the config from the headers.
+			 */
+			$this->setConfig(
+				array_merge(
+					$this->getConfigFromHeaders(),
+					$this->config
+				)
+			);
 		}
 	}
 	/**
-	 * Register the configuration array
+	 * Setter the root file
+	 * 
+	 * @param string $root_file : path to the root file of the plugin
+	 *
+	 * @return string
+	 */
+	public function setRootFile( string $root_file = '' ): void
+	{
+		$this->root_file = ! empty( $root_file ) ? $root_file : $this->getRootFileFromPath();
+	}
+	/**
+	 * Set the configuration array
 	 *
 	 * @param array<string, mixed> $config : configuration array.
 	 *
-	 * @return void
+	 * @return bool
 	 */
-	private function registerConfig( array $config ): void
+	public function setConfig(  array $config = [] ): void
 	{
-		if ( ! is_file( $this->root_file ) ) {
-			return;
-		}
-		$this->service_locator->addDefinitions(
-			array_merge(
-				$this->pluginArgs( $this->root_file ),
-				$config,
-				[
-					Controllers\ProcessorController::class => ServiceLocator::autowire(),
-					Controllers\ServiceController::class   => ServiceLocator::autowire(),
-					Controllers\ProviderController::class  => ServiceLocator::autowire(),
-				]
-			)
+		$this->config = array_merge(
+			$this->config,
+			$config
 		);
 	}
 	/**
-	 * Get the plugin arguments
+	 * Register the configuration with the service locator.
 	 *
-	 * @param string $file : path to the root file of the plugin.
+	 * @return void
+	 */
+	protected function registerConfig(): void
+	{
+		$this->service_locator->addDefinitions( $this->config );
+	}
+	/**
+	 * Get the configuration array from the headers of the root file.
 	 *
 	 * @return array<string, mixed>
 	 */
-	protected function pluginArgs( string $file ): array
+	protected function getConfigFromHeaders(): array
 	{
-		if ( ! is_file( $this->root_file ) ) {
-			return [];
-		}
-
 		$plugin_headers = get_file_data(
-			$file,
+			$this->root_file,
 			[
 				'plugin_uri' => 'Plugin URI',
 				'version'    => 'Version',
 			]
 		);
 
-		return [
-			'config.dir'     => plugin_dir_path( $this->root_file ),
-			'config.url'     => plugin_dir_url( $this->root_file ),
-			'config.package' => Helpers::slugify( basename( dirname( $this->root_file ) ) ),
-			'config.file'    => basename( $this->root_file ),
-			'config.slug'    => basename( dirname( $this->root_file ) ),
-			'config.banners' => [],
-			'config.icons'   => [],
-			'config.version' => $plugin_headers['version'],
+		$default = [
+			'plugin.dir'     => plugin_dir_path( $this->root_file ),
+			'plugin.url'     => plugin_dir_url( $this->root_file ),
+			'plugin.package' => Helpers::slugify( basename( dirname( $this->root_file ) ) ),
+			'plugin.file'    => basename( $this->root_file ),
+			'plugin.slug'    => basename( dirname( $this->root_file ) ),
+			'plugin.banners' => [
+				'low'  => plugin_dir_url( __FILE__ ) . '/assets/images/banner-772x250.jpg',
+				'high' => plugin_dir_url( __FILE__ ) . '/assets/images/banner-1544x500.jpg',
+			],
+			'plugin.icons'   => [
+				'default' => plugin_dir_url( __FILE__ ) . '/assets/images/icon-256x256.jpg',
+			],
+			'plugin.version' => $plugin_headers['version'],
 			'github.user'    => '',
 			'github.repo'    => '',
 			'github.branch'  => 'main',
 		];
+
+		return $default;
+	}
+	/**
+	 * Attempt to infer the root file of the plugin.
+	 *
+	 * @return string
+	 */
+	protected function getRootFileFromPath(): string
+	{	
+		if ( ! defined( 'WP_PLUGIN_DIR' ) ) {
+			return '';
+		}
+
+		$plugins = get_plugins();
+
+		foreach ( $plugins as $plugin_file => $plugin_data ) {
+	
+			if ( str_contains( 
+					__DIR__, 
+					trailingslashit( WP_PLUGIN_DIR ) . dirname( $plugin_file ) )
+			) {
+				return trailingslashit( WP_PLUGIN_DIR ) . $plugin_file;
+			}
+		}
+
+		return '';
+	}
+	/**
+	 * Register the controllers with the service locator.
+	 *
+	 * @return void
+	 */
+	protected function registerControllers(): void
+	{
+		$this->service_locator->addDefinitions(
+			[
+				Controllers\ProcessorController::class => ServiceLocator::autowire(),
+				Controllers\ServiceController::class   => ServiceLocator::autowire(),
+				Controllers\ProviderController::class  => ServiceLocator::autowire(),
+			]
+		);
 	}
 	/**
 	 * Fire Mounted action on mount
@@ -122,6 +191,19 @@ class Main
 	 */
 	public function mount(): void
 	{
+		/**
+		 * Register the configuration and controllers.
+		 */
+		$this->registerConfig();
+		$this->registerControllers();
+		/**
+		 * Build the service locator.
+		 */
+		$this->service_locator->build();
+		$this->service_locator->save();
+		/**
+		 * Instantiate the controllers.
+		 */
 		$this->service_locator->getService( Controllers\ProcessorController::class );
 		$this->service_locator->getService( Controllers\ServiceController::class );
 		$this->service_locator->getService( Controllers\ProviderController::class );

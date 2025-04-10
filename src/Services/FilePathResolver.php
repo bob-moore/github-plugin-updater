@@ -38,7 +38,7 @@ class FilePathResolver extends Abstracts\Module
 	 *
 	 * @see https://php-di.org/doc/attributes.html
 	 */
-	#[Inject( [ 'root_dir' => 'config.dir' ] )]
+	#[Inject( [ 'root_dir' => 'plugin.dir' ] )]
 	public function __construct( string $root_dir, string $package = '' )
 	{
 		$this->dir = trim( untrailingslashit( $root_dir ) );

@@ -35,10 +35,10 @@ class Updates extends Abstracts\Module
 	 */
 	#[Inject(
 		[
-			'version'     => 'config.version',
-			'plugin_slug' => 'config.slug',
-			'plugin_file' => 'config.file',
-			'package'     => 'config.package',
+			'version'     => 'plugin.version',
+			'plugin_slug' => 'plugin.slug',
+			'plugin_file' => 'plugin.file',
+			'package'     => 'plugin.package',
 		]
 	)]
 	public function __construct(

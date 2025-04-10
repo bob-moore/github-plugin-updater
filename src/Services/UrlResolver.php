@@ -36,7 +36,7 @@ class UrlResolver extends Abstracts\Module
 	 * @param string $root_url : root url of the plugin.
 	 * @param string $package : package name.
 	 */
-	#[Inject( [ 'root_url' => 'config.url' ] )]
+	#[Inject( [ 'root_url' => 'plugin.url' ] )]
 	public function __construct( string $root_url, string $package = '' )
 	{
 		$this->url = untrailingslashit( $root_url );

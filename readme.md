@@ -15,11 +15,11 @@ Install the [composer package]:
         'github.user' => 'bob-moore',
         'github.repo' => 'simple-menu-block',
         'github.branch' => 'main',
-        'config.banners' => [
+        'plugin.banners' => [
             'low' => trailingslashit( plugin_dir_url( __FILE__ ) ) . 'assets/banner-772x250.jpg',
             'high' => trailingslashit( plugin_dir_url( __FILE__ ) ) . 'assets/banner-1544x500.jpg',
         ],
-        'config.icons' => [
+        'plugin.icons' => [
             'default' => trailingslashit( plugin_dir_url( __FILE__ ) ) . 'assets/icon.png',
         ]
     ] );
