@@ -57,7 +57,7 @@ abstract class Module implements Interfaces\Module
 	 */
 	public function setPackage( string $package ): void
 	{
-		$this->package = strtolower( str_replace( [ '\\', '/', ' ' ], '_', trim( $package ) ) );
+		$this->package = strtolower( str_replace( [ '\\', '/', ' ', '-' ], '_', trim( $package ) ) );
 	}
 	/**
 	 * Getter for package field

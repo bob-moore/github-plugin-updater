@@ -81,7 +81,9 @@ class PluginInfo extends Abstracts\Module
 
 		$readme = $this->remote_request->requestRawContent( 'readme.md' );
 
-		$sections = $this->readme_parser->parseSections( $readme );
+		$sections = ! empty( $readme )
+			? $this->readme_parser->parseSections( $readme )
+			: [];
 
 		$response->sections = $sections;
 

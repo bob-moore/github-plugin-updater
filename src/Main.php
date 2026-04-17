@@ -115,26 +115,45 @@ class Main
 	 */
 	protected function getConfigFromHeaders(): array
 	{
-		$plugin_headers = get_file_data(
-			$this->root_file,
-			[
-				'plugin_uri' => 'Plugin URI',
-				'version'    => 'Version',
-			]
-		);
+		$plugin_headers = [
+			'plugin_uri' => '',
+			'version'    => '',
+		];
+		$plugin_dir = '';
+		$plugin_url = '';
+		$plugin_package = '';
+		$plugin_file = '';
+		$plugin_slug = '';
+		$asset_base_url = '';
+
+		if ( ! empty( $this->root_file ) && is_file( $this->root_file ) ) {
+			$plugin_headers = get_file_data(
+				$this->root_file,
+				[
+					'plugin_uri' => 'Plugin URI',
+					'version'    => 'Version',
+				]
+			);
+			$plugin_dir = plugin_dir_path( $this->root_file );
+			$plugin_url = plugin_dir_url( $this->root_file );
+			$plugin_package = Helpers::slugify( basename( dirname( $this->root_file ) ) );
+			$plugin_file = basename( $this->root_file );
+			$plugin_slug = basename( dirname( $this->root_file ) );
+			$asset_base_url = trailingslashit( $plugin_url ) . 'assets/images/';
+		}
 
 		$default = [
-			'plugin.dir'     => plugin_dir_path( $this->root_file ),
-			'plugin.url'     => plugin_dir_url( $this->root_file ),
-			'plugin.package' => Helpers::slugify( basename( dirname( $this->root_file ) ) ),
-			'plugin.file'    => basename( $this->root_file ),
-			'plugin.slug'    => basename( dirname( $this->root_file ) ),
+			'plugin.dir'     => $plugin_dir,
+			'plugin.url'     => $plugin_url,
+			'plugin.package' => $plugin_package,
+			'plugin.file'    => $plugin_file,
+			'plugin.slug'    => $plugin_slug,
 			'plugin.banners' => [
-				'low'  => plugin_dir_url( __FILE__ ) . '/assets/images/banner-772x250.jpg',
-				'high' => plugin_dir_url( __FILE__ ) . '/assets/images/banner-1544x500.jpg',
+				'low'  => ! empty( $asset_base_url ) ? $asset_base_url . 'banner-772x250.jpg' : '',
+				'high' => ! empty( $asset_base_url ) ? $asset_base_url . 'banner-1544x500.jpg' : '',
 			],
 			'plugin.icons'   => [
-				'default' => plugin_dir_url( __FILE__ ) . '/assets/images/icon-256x256.jpg',
+				'default' => ! empty( $asset_base_url ) ? $asset_base_url . 'icon-256x256.jpg' : '',
 			],
 			'plugin.version' => $plugin_headers['version'],
 			'github.user'    => '',
@@ -156,15 +175,33 @@ class Main
 		}
 
 		$plugins = get_plugins();
+		$current_dir = realpath( __DIR__ );
+		$matched_plugin = '';
+		$matched_length = 0;
+
+		if ( false === $current_dir ) {
+			return '';
+		}
 
 		foreach ( $plugins as $plugin_file => $plugin_data ) {
-	
-			if ( str_contains( 
-					__DIR__, 
-					trailingslashit( WP_PLUGIN_DIR ) . dirname( $plugin_file ) )
-			) {
-				return trailingslashit( WP_PLUGIN_DIR ) . $plugin_file;
+			$plugin_dir = realpath( trailingslashit( WP_PLUGIN_DIR ) . dirname( $plugin_file ) );
+
+			if ( false === $plugin_dir ) {
+				continue;
 			}
+
+			$normalized_plugin_dir = untrailingslashit( $plugin_dir );
+			$is_match = $current_dir === $normalized_plugin_dir
+				|| str_starts_with( $current_dir, $normalized_plugin_dir . DIRECTORY_SEPARATOR );
+
+			if ( $is_match && strlen( $normalized_plugin_dir ) > $matched_length ) {
+				$matched_plugin = $plugin_file;
+				$matched_length = strlen( $normalized_plugin_dir );
+			}
+		}
+
+		if ( ! empty( $matched_plugin ) ) {
+			return trailingslashit( WP_PLUGIN_DIR ) . $matched_plugin;
 		}
 
 		return '';

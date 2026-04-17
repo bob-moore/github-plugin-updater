@@ -96,7 +96,8 @@ class RemoteRequest extends Abstracts\Module
 	 */
 	public function getPluginInfo( $default = [] ): array
 	{
-		$cached = wp_cache_get( 'remote_info', $this->package );
+		$cache_key = $this->getCacheKey( 'remote_info' );
+		$cached = wp_cache_get( $cache_key, $this->package );
 
 		if ( $cached ) {
 			return $cached;
@@ -110,7 +111,7 @@ class RemoteRequest extends Abstracts\Module
 			$this->plugin_file
 		);
 
-		$response = wp_remote_get( $request_url );
+		$response = wp_remote_get( $request_url, $this->getRequestArgs() );
 
 		if (
 			is_wp_error( $response )
@@ -125,7 +126,7 @@ class RemoteRequest extends Abstracts\Module
 			$body
 		);
 
-		wp_cache_set( 'remote_info', $plugin_headers, $this->package, HOUR_IN_SECONDS );
+		wp_cache_set( $cache_key, $plugin_headers, $this->package, HOUR_IN_SECONDS );
 
 		return $plugin_headers;
 	}
@@ -138,7 +139,8 @@ class RemoteRequest extends Abstracts\Module
 	 */
 	public function requestRelease( string $version ): ?object
 	{
-		$cached = wp_cache_get( "release_{$version}", $this->package );
+		$cache_key = $this->getCacheKey( "release_{$version}" );
+		$cached = wp_cache_get( $cache_key, $this->package );
 
 		if ( $cached ) {
 			return $cached;
@@ -151,7 +153,7 @@ class RemoteRequest extends Abstracts\Module
 			$version
 		);
 
-		$response = wp_remote_get( $request_url );
+		$response = wp_remote_get( $request_url, $this->getRequestArgs() );
 
 		if (
 			is_wp_error( $response )
@@ -164,7 +166,11 @@ class RemoteRequest extends Abstracts\Module
 
 		$release_info = json_decode( $body );
 
-		wp_cache_set( "release_{$version}", $release_info, $this->package, HOUR_IN_SECONDS );
+		if ( ! is_object( $release_info ) ) {
+			return null;
+		}
+
+		wp_cache_set( $cache_key, $release_info, $this->package, HOUR_IN_SECONDS );
 
 		return $release_info;
 	}
@@ -185,7 +191,7 @@ class RemoteRequest extends Abstracts\Module
 			$file
 		);
 
-		$response = wp_remote_get( $request_url );
+		$response = wp_remote_get( $request_url, $this->getRequestArgs() );
 
 		if (
 			is_wp_error( $response )
@@ -197,5 +203,43 @@ class RemoteRequest extends Abstracts\Module
 		$body = wp_remote_retrieve_body( $response );
 
 		return $body;
+	}
+	/**
+	 * Build a unique cache key for repository-specific data.
+	 *
+	 * @param string $suffix The cache key suffix.
+	 *
+	 * @return string
+	 */
+	protected function getCacheKey( string $suffix ): string
+	{
+		return implode(
+			':',
+			array_filter(
+				[
+					$suffix,
+					$this->github_user,
+					$this->github_repo,
+					$this->branch,
+					$this->plugin_file,
+				],
+				static fn( string $value ): bool => '' !== $value
+			)
+		);
+	}
+	/**
+	 * Get request arguments for GitHub requests.
+	 *
+	 * @return array<string, mixed>
+	 */
+	protected function getRequestArgs(): array
+	{
+		return [
+			'timeout'    => 15,
+			'user-agent' => $this->package ?: 'github-wp-updater',
+			'headers'    => [
+				'Accept' => 'application/vnd.github+json',
+			],
+		];
 	}
 }

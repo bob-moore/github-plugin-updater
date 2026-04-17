@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Info Test Cases
+ * PluginInfo provider tests.
  *
- * PHP Version 8.2
+ * Verifies plugin information response gating and transformation behavior.
  *
  * @package github_plugin_updater
- * @subpackage PHPUnit/Tests/Services
+ * @subpackage PHPUnit/Tests/Providers
  * @author  Bob Moore <bob@bobmoore.dev>
  * @license GPL-2.0+ <http://www.gnu.org/licenses/gpl-2.0.txt>
  * @link    https://github.com/bob-moore/github-plugin-updater
@@ -14,107 +14,106 @@
 
 namespace Bmd\GithubWpUpdater\PHPUnit\Providers;
 
-use Bmd\GithubWpUpdater\Services,
-    Bmd\GithubWpUpdater\Providers,
-    Bmd\GithubWpUpdater\PHPUnit\Common;
+use Bmd\GithubWpUpdater\PHPUnit\Traits\ModuleTrait;
+use Bmd\GithubWpUpdater\Providers\PluginInfo;
+use Bmd\GithubWpUpdater\Services\ReadmeParser;
+use Bmd\GithubWpUpdater\Services\RemoteRequest;
+use WP_Mock;
+use WP_Mock\Tools\TestCase;
 
-use WP_Mock\Tools\TestCase as TestCase;
-
-use Mockery;
-
-class PluginInfoTest extends TestCase
+/**
+ * Test suite for the PluginInfo provider.
+ */
+final class PluginInfoTest extends TestCase
 {
-    use Common\ModuleTest;
-    /**
-     * Instance of the module being tested
-     *
-     * @var Providers\PluginInfo
-     */
-    protected $module;
-    /**
-     * Setup the test case with a new instance of the class
-     *
-     * @return void
-     */
-    public function setUp(): void
-    {
-        /**
-         * Mock the remote request class that fetches information from
-         * the github api
-         */
-        $remote_request = Mockery::mock( Services\RemoteRequest::class );
-        $remote_request
-            ->shouldReceive('getPluginInfo')
-            ->andReturn( [
-                'plugin_uri'      => 'https://example.com/plugin-uri',
-                'version'         => '1.0.0',
-                'requires'        => '6.0',
-                'tested'          => '6.1',
-                'requires_php'    => '7.4',
-            ]);
-        $remote_request
-            ->shouldReceive('requestRawContent')
-            ->andReturn( '' );
-        /**
-         * Mock the readme parser class that parses the readme file
-         * and returns the sections
-         */
-        $readme_parser = Mockery::mock( Services\ReadmeParser::class );
-        $readme_parser
-            ->shouldReceive('parseSections')
-            ->andReturn( [
-                'Test' => '',
-                'Content' => '<h1>Test</h1><p>Content</p>',
-            ]);
-        
-        $this->module = new Providers\PluginInfo(
-            $remote_request,
-            $readme_parser,
-            'plugin-slug',
-            'plugin-file',
-            'plugin-package'
-        );
+    use ModuleTrait;
 
-        parent::setUp();
+    /**
+     * Fully qualified class name used by shared module trait assertions.
+     *
+     * @var class-string<PluginInfo>
+     */
+    const TEST_CLASS = PluginInfo::class;
+
+    /**
+     * Ensures pluginInfo() returns original result when action is not plugin_information.
+     *
+     * @covers \Bmd\GithubWpUpdater\Providers\PluginInfo::pluginInfo
+     */
+    public function testPluginInfoReturnsOriginalResultForDifferentAction(): void
+    {
+        $remote = $this->createMock( RemoteRequest::class );
+        $remote->expects( $this->never() )->method( 'getPluginInfo' );
+
+        $parser = $this->createMock( ReadmeParser::class );
+        $parser->expects( $this->never() )->method( 'parseSections' );
+
+        $provider = new PluginInfo( $remote, $parser, 'github-plugin-updater', 'plugin.php', 'github_wp_updater' );
+
+        $result = [ 'unchanged' => true ];
+        $args   = (object) [ 'slug' => 'github-plugin-updater' ];
+
+        $this->assertSame( $result, $provider->pluginInfo( $result, 'query_plugins', $args ) );
     }
-    /**
-     * Nullify the service class to start fresh on the next test
-     *
-     * @return void
-     */
-    public function tearDown(): void
-    {
-        $this->module = null;
 
-        parent::tearDown();
+    /**
+     * Ensures pluginInfo() returns original result when requested slug does not match provider slug.
+     *
+     * @covers \Bmd\GithubWpUpdater\Providers\PluginInfo::pluginInfo
+     */
+    public function testPluginInfoReturnsOriginalResultForMismatchedSlug(): void
+    {
+        $remote = $this->createMock( RemoteRequest::class );
+        $remote->expects( $this->never() )->method( 'getPluginInfo' );
+
+        $parser = $this->createMock( ReadmeParser::class );
+        $parser->expects( $this->never() )->method( 'parseSections' );
+
+        $provider = new PluginInfo( $remote, $parser, 'github-plugin-updater', 'plugin.php', 'github_wp_updater' );
+
+        $result = false;
+        $args   = (object) [ 'slug' => 'other-plugin' ];
+
+        $this->assertFalse( $provider->pluginInfo( $result, 'plugin_information', $args ) );
     }
-    /**
-     * Test the parseSections method
-     * 
-     * @covers ReadmeParser::parseSections
-     *
-     * @return void
-     */
-    public function testPluginInfo(): void
-    {
 
-        $actual = $this->module->pluginInfo( [], 'plugin_information', (object) [
-            'slug' => 'plugin-slug',
-        ] );
-        
-        $expected = (object) [
-            'plugin_uri'      => 'https://example.com/plugin-uri',
-            'version'         => '1.0.0',
-            'requires'        => '6.0',
-            'tested'          => '6.1',
-            'requires_php'    => '7.4',
-            'new_version'     => '1.0.0',
-            'sections'        => [
-                'Test' => '',
-                'Content' => '<h1>Test</h1><p>Content</p>',
-            ],
+    /**
+     * Ensures pluginInfo() builds an enriched response for matching plugin requests.
+     *
+     * @covers \Bmd\GithubWpUpdater\Providers\PluginInfo::pluginInfo
+     */
+    public function testPluginInfoBuildsResponseForMatchingRequest(): void
+    {
+        $remoteResponse = [
+            'version' => '3.1.0',
+            'name'    => 'GitHub Updater',
         ];
 
-        $this->assertEquals( $expected, $actual );
+        $sections = [ 'Description' => '<p>Plugin description</p>' ];
+
+        $remote = $this->createMock( RemoteRequest::class );
+        $remote->expects( $this->once() )
+            ->method( 'getPluginInfo' )
+            ->willReturn( $remoteResponse );
+        $remote->expects( $this->once() )
+            ->method( 'requestRawContent' )
+            ->with( 'readme.md' )
+            ->willReturn( '# Description\nPlugin description' );
+
+        $parser = $this->createMock( ReadmeParser::class );
+        $parser->expects( $this->once() )
+            ->method( 'parseSections' )
+            ->with( '# Description\nPlugin description' )
+            ->willReturn( $sections );
+
+        $provider = new PluginInfo( $remote, $parser, 'github-plugin-updater', 'plugin.php', 'github_wp_updater' );
+
+        $args = (object) [ 'slug' => 'github-plugin-updater' ];
+
+        $result = $provider->pluginInfo( false, 'plugin_information', $args );
+
+        $this->assertIsObject( $result );
+        $this->assertSame( '3.1.0', $result->new_version );
+        $this->assertSame( $sections, $result->sections );
     }
 }

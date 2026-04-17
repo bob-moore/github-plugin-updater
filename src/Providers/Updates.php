@@ -57,15 +57,25 @@ class Updates extends Abstracts\Module
 	 */
 	protected function checkUpdates(): ?object
 	{
-		$remote = $this->remote_request->getPluginInfo();
+		$remote = wp_parse_args(
+			$this->remote_request->getPluginInfo(),
+			[
+				'version'      => '',
+				'requires'     => '',
+				'tested'       => '',
+				'requires_php' => '',
+			]
+		);
 		/**
 		 * Check if the plugin version has bumped on the github repo,
 		 * and that the new version requirements are met.
 		 */
 		if (
+			empty( $remote['version'] )
+			||
 			! version_compare( $this->version, $remote['version'], '<' )
-			|| ! version_compare( $remote['requires'], get_bloginfo( 'version' ), '<=' )
-			|| ! version_compare( $remote['requires_php'], PHP_VERSION, '<' )
+			|| ( ! empty( $remote['requires'] ) && ! version_compare( $remote['requires'], get_bloginfo( 'version' ), '<=' ) )
+			|| ( ! empty( $remote['requires_php'] ) && ! version_compare( $remote['requires_php'], PHP_VERSION, '<=' ) )
 		) {
 			return null;
 		}
@@ -82,7 +92,7 @@ class Updates extends Abstracts\Module
 						return null;
 		}
 
-		$update = apply_filters(
+		$update = (object) apply_filters(
 			"{$this->package}_update_response",
 			[
 				'new_version'   => $remote['version'],
@@ -113,6 +123,10 @@ class Updates extends Abstracts\Module
 			return $transient;
 		}
 
+		if ( ! is_array( $transient->response ) ) {
+			$transient->response = (array) $transient->response;
+		}
+
 		$updates = $this->checkUpdates();
 
 		if ( ! $updates ) {
@@ -132,10 +146,17 @@ class Updates extends Abstracts\Module
 	 */
 	protected function getReleaseZip( object $release ): ?string
 	{
+		if ( empty( $release->assets ) || ! is_iterable( $release->assets ) ) {
+			return null;
+		}
+
 		$assets = $release->assets;
 
 		foreach ( $assets as $asset ) {
-			if ( str_contains( $asset->name, 'zip' ) ) {
+			if (
+				isset( $asset->name, $asset->browser_download_url )
+				&& str_contains( $asset->name, 'zip' )
+			) {
 				return $asset->browser_download_url;
 			}
 		}

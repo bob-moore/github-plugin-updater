@@ -1,8 +1,8 @@
 <?php
 /**
- * Readme Parser Test
+ * ReadmeParser service tests.
  *
- * PHP Version 8.2
+ * Verifies section parsing and markdown conversion behavior.
  *
  * @package github_plugin_updater
  * @subpackage PHPUnit/Tests/Services
@@ -14,71 +14,65 @@
 
 namespace Bmd\GithubWpUpdater\PHPUnit\Services;
 
+use Bmd\GithubWpUpdater\PHPUnit\Traits\ModuleTrait;
 use Bmd\GithubWpUpdater\Services\ReadmeParser;
-use WP_Mock\Tools\TestCase as TestCase;
 use League\CommonMark\CommonMarkConverter;
-use Mockery;
+use WP_Mock\Tools\TestCase;
 
-class ReadmeParserTest extends TestCase
+/**
+ * Test suite for the ReadmeParser service.
+ */
+final class ReadmeParserTest extends TestCase
 {
+    use ModuleTrait;
+
     /**
-     * Instance of the module being tested
+     * Fully qualified class name used by shared module trait assertions.
      *
-     * @var \Mwf\Cornerstone\Abstracts\Module
+     * @var class-string<ReadmeParser>
      */
-    protected $module;
+    const TEST_CLASS = ReadmeParser::class;
+
     /**
-     * Setup the test case with a new instance of the class
+     * Ensures parseSections() extracts H1 blocks and converts markdown body to HTML.
      *
-     * @return void
+     * @covers \Bmd\GithubWpUpdater\Services\ReadmeParser::parseSections
      */
-    public function setUp(): void
+    public function testParseSectionsReturnsConvertedSections(): void
     {
-        $markdown_parser = new CommonMarkConverter();
+        $parser = new ReadmeParser( new CommonMarkConverter(), 'github_wp_updater' );
 
-        $this->module = new ReadmeParser( $markdown_parser );
+        $markdown = implode(
+            "\n",
+            [
+                '# Description',
+                'A **bold** package description.',
+                '',
+                '# Installation',
+                '1. Composer install',
+                '2. Activate plugin',
+            ]
+        );
 
-        parent::setUp();
-    }
-    /**
-     * Nullify the service class to start fresh on the next test
-     *
-     * @return void
-     */
-    public function tearDown(): void
-    {
-        $this->module = null;
+        $sections = $parser->parseSections( $markdown );
 
-        parent::tearDown();
-    }
-    /**
-     * Test the parseSections method
-     * 
-     * @covers ReadmeParser::parseSections
-     *
-     * @return void
-     */
-    public function testParseSections(): void
-    {
-        $markdown_parser = new CommonMarkConverter();
-
-        $content = "\n" . '## Subsection';
-        $content .= "\n" . 'Content for subsection';
-
-        $markdown = '# Test';
-        $markdown .= "\n" . '# Content';
-        $markdown .= $content;
-
-        $markdown_parser->convert( trim( $content ) )->getContent();
-
-        $expected = [
-            'Test' => '',
-            'Content' => $markdown_parser->convert( trim( $content ) )->getContent(),
-        ];
-        
-        $actual = $this->module->parseSections( $markdown );
-
-        $this->assertEquals( $expected, $actual );
+        $this->assertArrayHasKey( 'Description', $sections );
+        $this->assertArrayHasKey( 'Installation', $sections );
+        $this->assertStringContainsString( '<strong>bold</strong>', $sections['Description'] );
+        $this->assertStringContainsString( '<ol>', $sections['Installation'] );
     }
 
+    /**
+     * Ensures parseSections() returns an empty array when no H1 sections are present.
+     *
+     * @covers \Bmd\GithubWpUpdater\Services\ReadmeParser::parseSections
+     */
+    public function testParseSectionsReturnsEmptyArrayWithoutHeadings(): void
+    {
+        $parser = new ReadmeParser( new CommonMarkConverter(), 'github_wp_updater' );
+
+        $sections = $parser->parseSections( "No H1 headings in this text.\nOnly body content." );
+
+        $this->assertSame( [], $sections );
+    }
 }
