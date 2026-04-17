@@ -11,10 +11,10 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\Core\Traits;
+namespace Bmd\GithubWpUpdater\Core\Traits;
 
-use MarkedEffect\GHPluginUpdater\Core\Interfaces,
-MarkedEffect\GHPluginUpdater\Core\Helpers;
+use Bmd\GithubWpUpdater\Core\Interfaces,
+Bmd\GithubWpUpdater\Core\Helpers;
 
 /**
  * Action Loader trait

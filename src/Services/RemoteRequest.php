@@ -11,10 +11,10 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\Services;
+namespace Bmd\GithubWpUpdater\Services;
 
-use MarkedEffect\GHPluginUpdater\Core\Abstracts,
-	MarkedEffect\GHPluginUpdater\Processors\PluginHeaders;
+use Bmd\GithubWpUpdater\Core\Abstracts,
+	Bmd\GithubWpUpdater\Processors\PluginHeaders;
 
 use DI\Attribute\Inject;
 

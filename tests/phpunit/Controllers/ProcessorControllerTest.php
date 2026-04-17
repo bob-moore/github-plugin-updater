@@ -12,11 +12,11 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\PHPUnit\Controllers;
+namespace Bmd\GithubWpUpdater\PHPUnit\Controllers;
 
-use MarkedEffect\GHPluginUpdater\Controllers,
-    MarkedEffect\GHPluginUpdater\Core\Abstracts,
-    MarkedEffect\GHPluginUpdater\PHPUnit\Common;
+use Bmd\GithubWpUpdater\Controllers,
+    Bmd\GithubWpUpdater\Core\Abstracts,
+    Bmd\GithubWpUpdater\PHPUnit\Common;
 
 use WP_Mock\Tools\TestCase as TestCase;
 

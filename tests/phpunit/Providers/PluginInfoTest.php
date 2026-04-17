@@ -12,11 +12,11 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\PHPUnit\Providers;
+namespace Bmd\GithubWpUpdater\PHPUnit\Providers;
 
-use MarkedEffect\GHPluginUpdater\Services,
-    MarkedEffect\GHPluginUpdater\Providers,
-    MarkedEffect\GHPluginUpdater\PHPUnit\Common;
+use Bmd\GithubWpUpdater\Services,
+    Bmd\GithubWpUpdater\Providers,
+    Bmd\GithubWpUpdater\PHPUnit\Common;
 
 use WP_Mock\Tools\TestCase as TestCase;
 
@@ -24,7 +24,7 @@ use Mockery;
 
 class PluginInfoTest extends TestCase
 {
-    use Common\ModuleTests;
+    use Common\ModuleTest;
     /**
      * Instance of the module being tested
      *

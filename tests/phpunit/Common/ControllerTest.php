@@ -12,7 +12,7 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\PHPUnit\Common;
+namespace Bmd\GithubWpUpdater\PHPUnit\Common;
 
 trait ControllerTest
 {

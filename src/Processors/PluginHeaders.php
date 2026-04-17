@@ -11,9 +11,9 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\Processors;
+namespace Bmd\GithubWpUpdater\Processors;
 
-use MarkedEffect\GHPluginUpdater\Core\Abstracts;
+use Bmd\GithubWpUpdater\Core\Abstracts;
 
 /**
  * Service class for reading plugin headers

@@ -11,7 +11,7 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\Core;
+namespace Bmd\GithubWpUpdater\Core;
 
 /**
  * App Factory

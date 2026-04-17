@@ -11,10 +11,10 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater;
+namespace Bmd\GithubWpUpdater;
 
-use MarkedEffect\GHPluginUpdater\Services\ServiceLocator,
-	MarkedEffect\GHPluginUpdater\Core\Helpers;
+use Bmd\GithubWpUpdater\Services\ServiceLocator,
+	Bmd\GithubWpUpdater\Core\Helpers;
 
 /**
  * Main App Class

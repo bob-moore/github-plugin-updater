@@ -11,9 +11,9 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\Services;
+namespace Bmd\GithubWpUpdater\Services;
 
-use MarkedEffect\GHPluginUpdater\Core\Interfaces;
+use Bmd\GithubWpUpdater\Core\Interfaces;
 
 use DI\Container,
 	DI\ContainerBuilder,

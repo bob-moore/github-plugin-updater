@@ -6,12 +6,12 @@
 
 Install the [composer package]:
 
-    composer require marked-effect/github-plugin-updater
+    composer require bmd/github-wp-updater
 
 ## Example
 
 ```php
-    new GHPluginUpdater\Main( __FILE__, [
+    new Bmd\GithubWpUpdater\Main( __FILE__, [
         'github.user' => 'bob-moore',
         'github.repo' => 'simple-menu-block',
         'github.branch' => 'main',

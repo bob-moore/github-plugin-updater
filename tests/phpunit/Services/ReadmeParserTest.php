@@ -12,9 +12,9 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\PHPUnit\Services;
+namespace Bmd\GithubWpUpdater\PHPUnit\Services;
 
-use MarkedEffect\GHPluginUpdater\Services\ReadmeParser;
+use Bmd\GithubWpUpdater\Services\ReadmeParser;
 use WP_Mock\Tools\TestCase as TestCase;
 use League\CommonMark\CommonMarkConverter;
 use Mockery;

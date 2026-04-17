@@ -49,3 +49,4 @@ vendor
 *.lock
 # Other #
 ####################
+tests/.phpunit.cache/

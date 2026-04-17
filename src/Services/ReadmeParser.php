@@ -11,9 +11,9 @@
  * @since   0.1.0
  */
 
-namespace MarkedEffect\GHPluginUpdater\Services;
+namespace Bmd\GithubWpUpdater\Services;
 
-use MarkedEffect\GHPluginUpdater\Core\Abstracts;
+use Bmd\GithubWpUpdater\Core\Abstracts;
 
 use League\CommonMark\CommonMarkConverter;
 
