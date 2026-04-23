@@ -13,9 +13,11 @@
 
 namespace Bmd\GithubWpUpdater\Controllers;
 
-use Bmd\GithubWpUpdater\Services\ServiceLocator,
-	Bmd\GithubWpUpdater\Services,
-	Bmd\GithubWpUpdater\Core\Abstracts;
+use Bmd\GithubWpUpdater\Services,
+	Bmd\WPFramework\Abstracts,
+	Bmd\WPFramework\Services\FilePathResolver,
+	Bmd\WPFramework\Services\ServiceLocator,
+	Bmd\WPFramework\Services\UrlResolver;
 
 /**
  * Controls the registration and execution of services
@@ -32,8 +34,8 @@ class ServiceController extends Abstracts\Controller
 	public static function getServiceDefinitions(): array
 	{
 		return [
-			Services\FilePathResolver::class              => ServiceLocator::autowire(),
-			Services\UrlResolver::class                   => ServiceLocator::autowire(),
+			FilePathResolver::class                       => ServiceLocator::autowire(),
+			UrlResolver::class                            => ServiceLocator::autowire(),
 			Services\RemoteRequest::class                 => ServiceLocator::autowire(),
 			Services\ReadmeParser::class                  => ServiceLocator::autowire(),
 			\League\CommonMark\CommonMarkConverter::class => ServiceLocator::autowire(),

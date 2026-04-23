@@ -1,6 +1,6 @@
 <?php
 /**
- * Blocks Service Definition
+ * PluginInfo Provider
  *
  * PHP Version 8.2
  *
@@ -13,14 +13,14 @@
 
 namespace Bmd\GithubWpUpdater\Providers;
 
-use Bmd\GithubWpUpdater\Core\Abstracts,
-	Bmd\GithubWpUpdater\Services\ReadmeParser,
-	Bmd\GithubWpUpdater\Services\RemoteRequest;
+use Bmd\GithubWpUpdater\Services\ReadmeParser,
+	Bmd\GithubWpUpdater\Services\RemoteRequest,
+	Bmd\WPFramework\Abstracts;
 
 use DI\Attribute\Inject;
 
 /**
- * Service class for blocks
+ * Provides plugin info to the WordPress plugins_api filter
  *
  * @subpackage Providers
  */
@@ -39,7 +39,6 @@ class PluginInfo extends Abstracts\Module
 		[
 			'slug' => 'plugin.slug',
 			'file' => 'plugin.file',
-			'package' => 'plugin.package',
 		]
 	)]
 	public function __construct(
@@ -56,7 +55,7 @@ class PluginInfo extends Abstracts\Module
 	 *
 	 * @param false|object|array<string, mixed> $result The result object or array. Default false.
 	 * @param string                            $action The type of information being requested from the Plugin Installation API.
-	 * @param object                            $args Plugin API arguments.
+	 * @param object                            $args   Plugin API arguments.
 	 *
 	 * @return false|object|array<string, mixed>
 	 */
@@ -76,16 +75,12 @@ class PluginInfo extends Abstracts\Module
 		}
 
 		$response['new_version'] = $response['version'];
+		$response                = (object) apply_filters( "{$this->package}_update_response", $response );
 
-		$response = (object) apply_filters( "{$this->package}_update_response", $response );
-
-		$readme = $this->remote_request->requestRawContent( 'readme.md' );
-
-		$sections = ! empty( $readme )
+		$readme            = $this->remote_request->requestRawContent( 'readme.md' );
+		$response->sections = ! empty( $readme )
 			? $this->readme_parser->parseSections( $readme )
 			: [];
-
-		$response->sections = $sections;
 
 		return $response;
 	}

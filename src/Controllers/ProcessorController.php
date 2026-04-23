@@ -14,10 +14,11 @@
 namespace Bmd\GithubWpUpdater\Controllers;
 
 use Bmd\GithubWpUpdater\Processors,
-	Bmd\GithubWpUpdater\Services\ServiceLocator,
-	Bmd\GithubWpUpdater\Core\Abstracts;
+	Bmd\WPFramework\Abstracts,
+	Bmd\WPFramework\Services\ServiceLocator;
 
 use DI\Attribute\Inject;
+
 /**
  * Controls the registration and execution of "processors"
  *

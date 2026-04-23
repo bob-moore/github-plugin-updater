@@ -14,9 +14,8 @@
 namespace Bmd\GithubWpUpdater\Controllers;
 
 use Bmd\GithubWpUpdater\Providers,
-	Bmd\GithubWpUpdater\Services\ServiceLocator,
-	Bmd\GithubWpUpdater\Core\Helpers,
-	Bmd\GithubWpUpdater\Core\Abstracts;
+	Bmd\WPFramework\Abstracts,
+	Bmd\WPFramework\Services\ServiceLocator;
 
 use DI\Attribute\Inject;
 
@@ -39,7 +38,6 @@ class ProviderController extends Abstracts\Controller
 			Providers\Updates::class    => ServiceLocator::autowire(),
 		];
 	}
-
 	/**
 	 * Mount PluginInfo Provider
 	 *
@@ -52,7 +50,6 @@ class ProviderController extends Abstracts\Controller
 	{
 		add_filter( 'plugins_api', [ $provider, 'pluginInfo' ], 20, 3 );
 	}
-
 	/**
 	 * Mount Updates Provider
 	 *

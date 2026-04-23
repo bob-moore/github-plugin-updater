@@ -2,7 +2,6 @@
     "name": "bmd/github-wp-updater",
     "description": "GitHub Updater for WordPress",
     "type": "library",
-    "version": "0.1.1",
     "license": "GPL-2.0-or-later",
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -21,7 +20,10 @@
         "psr-4": {
             "Bmd\\GithubWpUpdater\\": "src",
             "Bmd\\GithubWpUpdater\\PHPUnit\\": "tests/phpunit"
-        }
+        },
+        "classmap": [
+            "src/GithubWpUpdater.php"
+        ]
     },
     "scripts": {
         "phpstan": "vendor/bin/phpstan analyze -c tests/phpstan.neon --memory-limit=2048M",
@@ -44,7 +46,7 @@
         "10up/wp_mock": "*"
     },
     "require": {
-        "php-di/php-di": "*",
+        "bmd/wp-framework": "*",
         "league/commonmark": "^2.6"
     }
 }

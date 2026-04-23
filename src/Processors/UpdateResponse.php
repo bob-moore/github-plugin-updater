@@ -13,14 +13,14 @@
 
 namespace Bmd\GithubWpUpdater\Processors;
 
-use Bmd\GithubWpUpdater\Core\Abstracts;
+use Bmd\WPFramework\Abstracts;
 
 use DI\Attribute\Inject;
 
 /**
  * Service class for controlling the update response.
  *
- * @subpackage Services
+ * @subpackage Processors
  */
 class UpdateResponse extends Abstracts\Module
 {
@@ -29,10 +29,10 @@ class UpdateResponse extends Abstracts\Module
 	 *
 	 * @param string                $plugin_slug the folder name of the plugin.
 	 * @param string                $plugin_file the main plugin file.
-	 * @param string                $version the version of the plugin.
-	 * @param array<string, string> $icons array of plugin icons.
-	 * @param array<string, string> $banners array of plugin banners.
-	 * @param string                $package the package name.
+	 * @param string                $version     the version of the plugin.
+	 * @param array<string, string> $icons       array of plugin icons.
+	 * @param array<string, string> $banners     array of plugin banners.
+	 * @param string                $package     the package name.
 	 */
 	#[Inject(
 		[
@@ -41,7 +41,6 @@ class UpdateResponse extends Abstracts\Module
 			'version'     => 'plugin.version',
 			'icons'       => 'plugin.icons',
 			'banners'     => 'plugin.banners',
-			'package'     => 'plugin.package',
 		]
 	)]
 	public function __construct(

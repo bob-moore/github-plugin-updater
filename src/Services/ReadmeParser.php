@@ -13,8 +13,7 @@
 
 namespace Bmd\GithubWpUpdater\Services;
 
-use Bmd\GithubWpUpdater\Core\Abstracts;
-
+use Bmd\WPFramework\Abstracts;
 use League\CommonMark\CommonMarkConverter;
 
 /**
@@ -44,38 +43,28 @@ class ReadmeParser extends Abstracts\Module
 	 */
 	public function parseSections( string $markdown ): array
 	{
-		// Initialize sections array.
-		$sections = [];
-
-		// Split content by lines.
-		$lines = explode( "\n", $markdown );
-
+		$sections        = [];
+		$lines           = explode( "\n", $markdown );
 		$current_section = null;
 		$current_content = [];
-		$in_section = false;
+		$in_section      = false;
 
 		foreach ( $lines as $line ) {
-			// Check if line is an H1 heading.
 			if ( preg_match( '/^# (.+)$/', $line, $matches ) ) {
-				// If we were already in a section, save it.
 				if ( $in_section && ( null !== $current_section ) ) {
 					$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) )->getContent();
-					$current_content = [];
+					$current_content              = [];
 				}
-
-				// Set the new current section.
 				$current_section = trim( $matches[1] );
-				$in_section = true;
+				$in_section      = true;
 				continue;
 			}
 
-			// If we're in a section, collect the content.
 			if ( $in_section ) {
 				$current_content[] = $line;
 			}
 		}
 
-		// Save the last section if there is one.
 		if ( $in_section && ( null !== $current_section ) ) {
 			$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) )->getContent();
 		}

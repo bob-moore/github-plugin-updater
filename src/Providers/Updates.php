@@ -1,6 +1,6 @@
 <?php
 /**
- * Blocks Service Definition
+ * Updates Provider
  *
  * PHP Version 8.2
  *
@@ -13,12 +13,13 @@
 
 namespace Bmd\GithubWpUpdater\Providers;
 
-use Bmd\GithubWpUpdater\Core\Abstracts,
-	Bmd\GithubWpUpdater\Services\RemoteRequest;
+use Bmd\GithubWpUpdater\Services\RemoteRequest,
+	Bmd\WPFramework\Abstracts;
 
 use DI\Attribute\Inject;
+
 /**
- * Service class for blocks
+ * Provides update data to the WordPress site_transient_update_plugins filter
  *
  * @subpackage Providers
  */
@@ -38,7 +39,6 @@ class Updates extends Abstracts\Module
 			'version'     => 'plugin.version',
 			'plugin_slug' => 'plugin.slug',
 			'plugin_file' => 'plugin.file',
-			'package'     => 'plugin.package',
 		]
 	)]
 	public function __construct(
@@ -66,14 +66,10 @@ class Updates extends Abstracts\Module
 				'requires_php' => '',
 			]
 		);
-		/**
-		 * Check if the plugin version has bumped on the github repo,
-		 * and that the new version requirements are met.
-		 */
+
 		if (
 			empty( $remote['version'] )
-			||
-			! version_compare( $this->version, $remote['version'], '<' )
+			|| ! version_compare( $this->version, $remote['version'], '<' )
 			|| ( ! empty( $remote['requires'] ) && ! version_compare( $remote['requires'], get_bloginfo( 'version' ), '<=' ) )
 			|| ( ! empty( $remote['requires_php'] ) && ! version_compare( $remote['requires_php'], PHP_VERSION, '<=' ) )
 		) {
@@ -89,22 +85,20 @@ class Updates extends Abstracts\Module
 		$package = $this->getReleaseZip( $release );
 
 		if ( ! $package ) {
-						return null;
+			return null;
 		}
 
-		$update = (object) apply_filters(
+		return (object) apply_filters(
 			"{$this->package}_update_response",
 			[
-				'new_version'   => $remote['version'],
-				'package'       => $package,
-				'tested'        => $remote['tested'],
-				'requires_php'  => $remote['requires_php'],
-				'added'         => $release->created_at,
-				'last_updated'  => $release->published_at,
+				'new_version'  => $remote['version'],
+				'package'      => $package,
+				'tested'       => $remote['tested'],
+				'requires_php' => $remote['requires_php'],
+				'added'        => $release->created_at,
+				'last_updated' => $release->published_at,
 			]
 		);
-
-		return $update;
 	}
 	/**
 	 * Filters the update transient.
@@ -150,9 +144,7 @@ class Updates extends Abstracts\Module
 			return null;
 		}
 
-		$assets = $release->assets;
-
-		foreach ( $assets as $asset ) {
+		foreach ( $release->assets as $asset ) {
 			if (
 				isset( $asset->name, $asset->browser_download_url )
 				&& str_contains( $asset->name, 'zip' )

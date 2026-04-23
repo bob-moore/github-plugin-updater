@@ -13,13 +13,13 @@
 
 namespace Bmd\GithubWpUpdater\Services;
 
-use Bmd\GithubWpUpdater\Core\Abstracts,
-	Bmd\GithubWpUpdater\Processors\PluginHeaders;
+use Bmd\GithubWpUpdater\Processors\PluginHeaders,
+	Bmd\WPFramework\Abstracts;
 
 use DI\Attribute\Inject;
 
 /**
- * Service class for router actions
+ * Service class for fetching plugin data from GitHub
  *
  * @subpackage Services
  */
@@ -29,11 +29,11 @@ class RemoteRequest extends Abstracts\Module
 	 * Public constructor.
 	 *
 	 * @param PluginHeaders $plugin_header_processor The plugin header processor.
-	 * @param string        $github_user            The github user.
-	 * @param string        $github_repo            The github repo.
-	 * @param string        $branch                 The branch to use.
-	 * @param string        $plugin_file            The plugin file.
-	 * @param string        $package                The package name.
+	 * @param string        $github_user             The github user.
+	 * @param string        $github_repo             The github repo.
+	 * @param string        $branch                  The branch to use.
+	 * @param string        $plugin_file             The plugin file.
+	 * @param string        $package                 The package name.
 	 */
 	#[Inject(
 		[
@@ -41,7 +41,6 @@ class RemoteRequest extends Abstracts\Module
 			'github_repo' => 'github.repo',
 			'branch'      => 'github.branch',
 			'plugin_file' => 'plugin.file',
-			'package'     => 'plugin.package',
 		]
 	)]
 	public function __construct(
@@ -97,7 +96,7 @@ class RemoteRequest extends Abstracts\Module
 	public function getPluginInfo( $default = [] ): array
 	{
 		$cache_key = $this->getCacheKey( 'remote_info' );
-		$cached = wp_cache_get( $cache_key, $this->package );
+		$cached    = wp_cache_get( $cache_key, $this->package );
 
 		if ( $cached ) {
 			return $cached;
@@ -122,9 +121,7 @@ class RemoteRequest extends Abstracts\Module
 
 		$body = wp_remote_retrieve_body( $response );
 
-		$plugin_headers = $this->plugin_header_processor->getFileData(
-			$body
-		);
+		$plugin_headers = $this->plugin_header_processor->getFileData( $body );
 
 		wp_cache_set( $cache_key, $plugin_headers, $this->package, HOUR_IN_SECONDS );
 
@@ -140,7 +137,7 @@ class RemoteRequest extends Abstracts\Module
 	public function requestRelease( string $version ): ?object
 	{
 		$cache_key = $this->getCacheKey( "release_{$version}" );
-		$cached = wp_cache_get( $cache_key, $this->package );
+		$cached    = wp_cache_get( $cache_key, $this->package );
 
 		if ( $cached ) {
 			return $cached;
@@ -200,9 +197,7 @@ class RemoteRequest extends Abstracts\Module
 			return '';
 		}
 
-		$body = wp_remote_retrieve_body( $response );
-
-		return $body;
+		return wp_remote_retrieve_body( $response );
 	}
 	/**
 	 * Build a unique cache key for repository-specific data.
