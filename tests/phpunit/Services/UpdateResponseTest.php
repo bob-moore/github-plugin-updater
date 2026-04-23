@@ -14,7 +14,6 @@
 
 namespace Bmd\GithubWpUpdater\PHPUnit\Services;
 
-use Bmd\GithubWpUpdater\PHPUnit\Traits\ModuleTrait;
 use Bmd\GithubWpUpdater\Processors\UpdateResponse;
 use WP_Mock\Tools\TestCase;
 
@@ -23,15 +22,6 @@ use WP_Mock\Tools\TestCase;
  */
 final class UpdateResponseTest extends TestCase
 {
-    use ModuleTrait;
-
-    /**
-     * Fully qualified class name used by shared module trait assertions.
-     *
-     * @var class-string<UpdateResponse>
-     */
-    const TEST_CLASS = UpdateResponse::class;
-
     /**
      * Ensures mergeUpdateResponse() returns expected defaults from constructor values.
      *

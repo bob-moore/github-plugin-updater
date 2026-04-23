@@ -14,7 +14,6 @@
 
 namespace Bmd\GithubWpUpdater\PHPUnit\Providers;
 
-use Bmd\GithubWpUpdater\PHPUnit\Traits\ModuleTrait;
 use Bmd\GithubWpUpdater\Providers\PluginInfo;
 use Bmd\GithubWpUpdater\Services\ReadmeParser;
 use Bmd\GithubWpUpdater\Services\RemoteRequest;
@@ -26,15 +25,6 @@ use WP_Mock\Tools\TestCase;
  */
 final class PluginInfoTest extends TestCase
 {
-    use ModuleTrait;
-
-    /**
-     * Fully qualified class name used by shared module trait assertions.
-     *
-     * @var class-string<PluginInfo>
-     */
-    const TEST_CLASS = PluginInfo::class;
-
     /**
      * Ensures pluginInfo() returns original result when action is not plugin_information.
      *

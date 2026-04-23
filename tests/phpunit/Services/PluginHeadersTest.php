@@ -14,7 +14,6 @@
 
 namespace Bmd\GithubWpUpdater\PHPUnit\Services;
 
-use Bmd\GithubWpUpdater\PHPUnit\Traits\ModuleTrait;
 use Bmd\GithubWpUpdater\Processors\PluginHeaders;
 use WP_Mock;
 use WP_Mock\Tools\TestCase;
@@ -24,15 +23,6 @@ use WP_Mock\Tools\TestCase;
  */
 final class PluginHeadersTest extends TestCase
 {
-    use ModuleTrait;
-
-    /**
-     * Fully qualified class name used by shared module trait assertions.
-     *
-     * @var class-string<PluginHeaders>
-     */
-    const TEST_CLASS = PluginHeaders::class;
-
     /**
      * Defines constants used by processor logic when WordPress is not loaded.
      *

@@ -14,7 +14,6 @@
 
 namespace Bmd\GithubWpUpdater\PHPUnit\Services;
 
-use Bmd\GithubWpUpdater\PHPUnit\Traits\ModuleTrait;
 use Bmd\GithubWpUpdater\Processors\PluginHeaders;
 use Bmd\GithubWpUpdater\Services\RemoteRequest;
 use WP_Mock;
@@ -25,15 +24,6 @@ use WP_Mock\Tools\TestCase;
  */
 final class RemoteRequestTest extends TestCase
 {
-    use ModuleTrait;
-
-    /**
-     * Fully qualified class name used by shared module trait assertions.
-     *
-     * @var class-string<RemoteRequest>
-     */
-    const TEST_CLASS = RemoteRequest::class;
-
     /**
      * Defines core constants used by the service when WordPress is not loaded.
      *

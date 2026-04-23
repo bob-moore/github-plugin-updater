@@ -10,7 +10,6 @@
 
 namespace Bmd\GithubWpUpdater\PHPUnit\Providers;
 
-use Bmd\GithubWpUpdater\PHPUnit\Traits\ModuleTrait;
 use Bmd\GithubWpUpdater\Providers\Updates;
 use Bmd\GithubWpUpdater\Services\RemoteRequest;
 use WP_Mock;
@@ -18,10 +17,6 @@ use WP_Mock\Tools\TestCase;
 
 final class UpdatesTest extends TestCase
 {
-    use ModuleTrait;
-
-    const TEST_CLASS = Updates::class;
-
     /**
      * Ensures updates are allowed when the current PHP version exactly matches the remote requirement.
      *

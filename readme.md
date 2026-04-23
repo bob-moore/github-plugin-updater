@@ -79,6 +79,9 @@ require_once __DIR__ . '/vendor/autoload.php';
 ) )->mount();
 ```
 
+`plugin.version` is auto-discovered from the target plugin's main file header.
+You do not need to set it in constructor config.
+
 ## Using It From A Theme Or Shared Framework
 
 If your theme, starter kit, framework, or build system is responsible for bootstrapping plugins, that is fine. The important constraint is that the updater still needs the plugin's real main file.
@@ -196,6 +199,17 @@ Example:
 ]
 ```
 
+### Asset Precedence
+
+Asset values are resolved in this order:
+
+1. Bundled updater defaults from `src/assets/`
+2. Plugin-side asset files discovered at runtime
+3. Explicit constructor config values
+
+If you set an asset key directly in constructor config, it is treated as the
+highest-priority value.
+
 ### Automatically Derived Keys
 
 These are normally inferred from the plugin root file and do not need to be set manually unless you are doing something unusual:
@@ -205,11 +219,28 @@ These are normally inferred from the plugin root file and do not need to be set 
 - `plugin.package`
 - `plugin.file`
 - `plugin.slug`
-- `plugin.version`
+- `plugin.version` (from the plugin file `Version` header)
 
 ## Hooks And Extension Points
 
 The package exposes one main filter namespace based on `plugin.package`.
+
+### `{config.package}_config`
+
+Filters the updater config before it is committed to the framework service
+container. Use this to add or override presentation metadata such as icons,
+banners, or any other config key.
+
+Example:
+
+```php
+add_filter( 'example_plugin_config', function ( $config ) {
+    $config['plugin.icons']['default'] = 'https://cdn.example.com/icon-256x256.jpg';
+    $config['plugin.banners']['high'] = 'https://cdn.example.com/banner-1544x500.jpg';
+
+    return $config;
+}, 20 );
+```
 
 ### `{package}_update_response`
 

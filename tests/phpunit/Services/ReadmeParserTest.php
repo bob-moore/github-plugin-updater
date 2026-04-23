@@ -14,7 +14,6 @@
 
 namespace Bmd\GithubWpUpdater\PHPUnit\Services;
 
-use Bmd\GithubWpUpdater\PHPUnit\Traits\ModuleTrait;
 use Bmd\GithubWpUpdater\Services\ReadmeParser;
 use League\CommonMark\CommonMarkConverter;
 use WP_Mock\Tools\TestCase;
@@ -24,15 +23,6 @@ use WP_Mock\Tools\TestCase;
  */
 final class ReadmeParserTest extends TestCase
 {
-    use ModuleTrait;
-
-    /**
-     * Fully qualified class name used by shared module trait assertions.
-     *
-     * @var class-string<ReadmeParser>
-     */
-    const TEST_CLASS = ReadmeParser::class;
-
     /**
      * Ensures parseSections() extracts H1 blocks and converts markdown body to HTML.
      *
