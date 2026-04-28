@@ -16,6 +16,7 @@ namespace Bmd;
 use Bmd\WPFramework\ {
 	Main,
 	Helpers,
+	Services\ServiceLocator
 };
 use Bmd\GithubWpUpdater\Controllers;
 
@@ -48,16 +49,6 @@ class GithubWpUpdater extends Main
 	 * @var string
 	 */
 	public const PACKAGE = 'bmd_github_wp_updater';
-	/**
-	 * Controllers to register and mount.
-	 *
-	 * @var array<int, class-string>
-	 */
-	protected const CONTROLLERS = [
-		Controllers\ProcessorController::class,
-		Controllers\ServiceController::class,
-		Controllers\ProviderController::class,
-	];
 	/**
 	 * Public constructor.
 	 *
@@ -193,6 +184,19 @@ class GithubWpUpdater extends Main
 
 		return $config;
 	}
+	/**
+	* Get definitions that should be added to the service container
+	*
+	* @return array<string, mixed>
+	*/
+	public static function getServiceDefinitions(): array
+	{
+		return [
+			Controllers\ProcessorController::class => ServiceLocator::autowire(),
+			Controllers\ServiceController::class   => ServiceLocator::autowire(),
+			Controllers\ProviderController::class  => ServiceLocator::autowire(),
+		];
+	} 
 	/**
 	 * Register filters and mount the updater.
 	 *
