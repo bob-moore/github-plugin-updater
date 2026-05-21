@@ -10,7 +10,7 @@ This package is built for plugins. You can initialize it from a plugin or from t
 - Reads plugin metadata from the remote main plugin file.
 - Loads release download URLs from GitHub releases.
 - Injects update information into WordPress' normal plugin update flow.
-- Loads plugin information sections from a remote `readme.md` file.
+- Loads plugin information sections from common remote readme files.
 
 ## Installation
 
@@ -25,11 +25,11 @@ Minimal plugin bootstrap:
 ```php
 <?php
 
-use Bmd\GithubWpUpdater\Main;
+use Bmd\GithubWpUpdater;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-$updater = new Main(
+$updater = new GithubWpUpdater(
     __FILE__,
     [
         'github.user' => 'your-github-user-or-org',
@@ -41,7 +41,7 @@ $updater = new Main(
 $updater->mount();
 ```
 
-`mount()` is required. Constructing `Main` only prepares config and services. It does not register the update hooks by itself.
+`mount()` is required. Constructing `GithubWpUpdater` only prepares config and services. It does not register the update hooks by itself.
 
 ## Using It In A Plugin
 
@@ -58,11 +58,11 @@ The normal plugin setup is to instantiate the updater from the plugin's main fil
  * Tested up to: 6.6
  */
 
-use Bmd\GithubWpUpdater\Main;
+use Bmd\GithubWpUpdater;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-( new Main(
+( new GithubWpUpdater(
     __FILE__,
     [
         'github.user' => 'acme',
@@ -91,13 +91,13 @@ Use this pattern when the bootstrap code is not inside the plugin itself:
 ```php
 <?php
 
-use Bmd\GithubWpUpdater\Main;
+use Bmd\GithubWpUpdater;
 
 require_once get_theme_file_path( 'vendor/autoload.php' );
 
 $plugin_root_file = WP_PLUGIN_DIR . '/example-plugin/example-plugin.php';
 
-( new Main(
+( new GithubWpUpdater(
     $plugin_root_file,
     [
         'github.user' => 'acme',
@@ -131,22 +131,22 @@ The remote plugin file should contain standard WordPress headers near the top, i
 - `Tested up to`
 - `Requires PHP`
 
-### 3. GitHub Release Tag Matches Plugin Version
+### 3. GitHub Release Represents The Update Version
 
-When the remote plugin file reports version `1.2.3`, this package requests the GitHub release tagged `1.2.3`.
+The updater checks the latest GitHub release first, then reads the plugin headers from that release tag. The remote plugin file version should match the release version. Tags with a leading `v`, such as `v1.2.3`, are normalized for comparison.
 
 ### 4. Release Contains A Zip Asset
 
-The updater scans the release assets and uses the first asset whose name contains `zip`.
+The updater scans uploaded release assets and uses the configured asset name when `github.asset` is set. Otherwise it uses the first uploaded asset ending in `.zip`. GitHub-generated source archives are not used for plugin update packages because they can change the extracted plugin directory name.
 
 Practical recommendation:
 
 - Attach a plugin zip to every release.
 - Use predictable names like `example-plugin.zip` or `example-plugin-1.2.3.zip`.
 
-### 5. Optional `readme.md` In Repo Root
+### 5. Optional Readme In Repo Root
 
-The plugin info modal requests `readme.md` from the repository root and parses top-level `# Heading` sections into WordPress plugin info sections.
+The plugin info modal checks `readme.md`, `README.md`, and `readme.txt` from the repository root. Markdown `#`/`##` headings and WordPress.org-style `== Heading ==` sections are parsed into plugin info sections.
 
 Use a structure like:
 
@@ -163,7 +163,7 @@ Use a structure like:
 
 ## Configuration Reference
 
-Pass configuration as the second argument to `new Main( $root_file, $config )`.
+Pass configuration as the second argument to `new GithubWpUpdater( $root_file, $config )`.
 
 ### Required GitHub Keys
 
@@ -172,7 +172,16 @@ Pass configuration as the second argument to `new Main( $root_file, $config )`.
 - `github.repo`
   Repository name.
 - `github.branch`
-  Branch used for reading the remote plugin file and `readme.md`. Defaults to `main`.
+  Branch used as a fallback for reading remote files. Defaults to `main`.
+- `github.token`
+  Optional GitHub token for private repositories or higher API limits.
+- `github.asset`
+  Optional exact release asset filename to prefer before the first `.zip` asset.
+
+### Optional Container Cache Key
+
+- `config.cacheDir`
+  Directory for PHP-DI compiled container files. Defaults to the package `cache` directory. Set to `false`, `null`, or an empty string to disable compilation. Compilation only runs when `wp_get_environment_type()` returns `production`.
 
 ### Optional Presentation Keys
 
@@ -203,8 +212,8 @@ Example:
 
 Asset values are resolved in this order:
 
-1. Bundled updater defaults from `src/assets/`
-2. Plugin-side asset files discovered at runtime
+1. Plugin-side asset files discovered at runtime
+2. Bundled updater defaults from `src/assets/`
 3. Explicit constructor config values
 
 If you set an asset key directly in constructor config, it is treated as the
@@ -227,7 +236,7 @@ The package exposes one main filter namespace based on `plugin.package`.
 
 ### `{config.package}_config`
 
-Filters the updater config before it is committed to the framework service
+Filters the updater config before it is committed to the service
 container. Use this to add or override presentation metadata such as icons,
 banners, or any other config key.
 
@@ -270,15 +279,18 @@ add_filter( 'example_plugin_default_plugin_headers', function ( $headers ) {
 
 ## Advanced Service Access
 
-If you need to access a registered service after mounting, you can resolve it through `Main::locateService()`.
+If you need to access a registered service after mounting, keep the updater instance and resolve from it.
 
 ```php
 <?php
 
-use Bmd\GithubWpUpdater\Main;
+use Bmd\GithubWpUpdater;
 use Bmd\GithubWpUpdater\Services\RemoteRequest;
 
-$service = Main::locateService( RemoteRequest::class );
+$updater = new GithubWpUpdater( __FILE__, $config );
+$updater->mount();
+
+$service = $updater->getInstance( RemoteRequest::class );
 ```
 
 Use fully qualified class names when possible.
@@ -287,8 +299,9 @@ Use fully qualified class names when possible.
 
 - Updates are only offered when the remote version is higher than the installed version.
 - The remote `Requires at least` and `Requires PHP` headers are enforced before showing an update.
-- Release metadata comes from GitHub releases, not tags alone.
+- Release metadata comes from the latest GitHub release, not tags alone.
 - The package caches GitHub responses using WordPress object cache functions.
+- Failed GitHub responses are cached briefly to reduce repeated admin latency and rate-limit pressure.
 
 ## Troubleshooting
 
@@ -297,8 +310,8 @@ Use fully qualified class names when possible.
 Check all of the following:
 
 - The remote plugin file version is higher than the installed plugin version.
-- The release tag matches the plugin version exactly.
-- The release has a zip asset attached.
+- The latest release points at the intended plugin version.
+- The release has a `.zip` asset attached, or a configured `github.asset` that points to an uploaded release zip.
 - `github.user`, `github.repo`, and `github.branch` are correct.
 - The plugin root file passed to `Main` is the real plugin main file.
 
@@ -306,8 +319,8 @@ Check all of the following:
 
 Check:
 
-- `readme.md` exists in the repository root.
-- The file uses top-level `# Heading` sections.
+- `readme.md`, `README.md`, or `readme.txt` exists in the repository root.
+- The file uses `#`, `##`, or `== Heading ==` sections.
 - The branch configured in `github.branch` contains that file.
 
 ### I am mounting this from theme code and nothing works
@@ -319,10 +332,10 @@ The usual problem is the wrong `root_file`. Pass the plugin main file path, not 
 If you are using this package from generated code, the safe default implementation checklist is:
 
 1. Require Composer autoload.
-2. Instantiate `Bmd\GithubWpUpdater\Main` with the plugin main file.
+2. Instantiate `Bmd\GithubWpUpdater` with the plugin main file.
 3. Provide `github.user`, `github.repo`, and optionally `github.branch`.
 4. Call `->mount()` exactly once during bootstrap.
-5. Ensure the GitHub repo has a matching release tag and a zip asset.
+5. Ensure the GitHub repo has a published release with an uploaded plugin zip asset.
 6. Keep the plugin headers in the main plugin file accurate.
 
 Minimal LLM-safe template:
@@ -330,11 +343,11 @@ Minimal LLM-safe template:
 ```php
 <?php
 
-use Bmd\GithubWpUpdater\Main;
+use Bmd\GithubWpUpdater;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-( new Main(
+( new GithubWpUpdater(
     __FILE__,
     [
         'github.user' => 'your-org',

@@ -13,14 +13,14 @@
 
 namespace Bmd\GithubWpUpdater\Processors;
 
-use Bmd\WPFramework\Abstracts;
+use Bmd\GithubWpUpdater\Module;
 
 /**
  * Service class for reading plugin headers
  *
  * @subpackage Processors
  */
-class PluginHeaders extends Abstracts\Module
+class PluginHeaders extends Module
 {
 	/**
 	 * The plugin headers to look for in the file.

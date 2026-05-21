@@ -13,12 +13,8 @@
 
 namespace Bmd;
 
-use Bmd\WPFramework\ {
-	Main,
-	Helpers,
-	Services\ServiceLocator
-};
-use Bmd\GithubWpUpdater\Controllers;
+use Bmd\GithubWpUpdater\Controller;
+use Bmd\GithubWpUpdater\Utilities;
 
 /**
  * Main App Class
@@ -39,7 +35,7 @@ use Bmd\GithubWpUpdater\Controllers;
  *
  * @subpackage Main
  */
-class GithubWpUpdater extends Main
+class GithubWpUpdater
 {
 	/**
 	 * Package identifier for this plugin.
@@ -49,6 +45,14 @@ class GithubWpUpdater extends Main
 	 * @var string
 	 */
 	public const PACKAGE = 'bmd_github_wp_updater';
+
+	/**
+	 * Service container for this updater instance.
+	 *
+	 * @var \DI\Container|null
+	 */
+	protected ?\DI\Container $services = null;
+
 	/**
 	 * Public constructor.
 	 *
@@ -79,8 +83,6 @@ class GithubWpUpdater extends Main
 		}
 
 		$this->config = $this->normalizeConfig( $config );
-
-		parent::__construct( $this->config );
 	}
 	/**
 	 * Build the base config from the target plugin's root file.
@@ -112,9 +114,10 @@ class GithubWpUpdater extends Main
 
 		$default = [
 			// WordPress service-container path identifiers.
-			'config.dir'     => plugin_dir_path( $this->root_file ),
-			'config.url'     => plugin_dir_url( $this->root_file ),
-			'config.package' => Helpers::slugify( basename( dirname( $this->root_file ) ) ),
+			'config.dir'      => plugin_dir_path( $this->root_file ),
+			'config.url'      => plugin_dir_url( $this->root_file ),
+			'config.package'  => Utilities::slugify( basename( dirname( $this->root_file ) ) ),
+			'config.cacheDir' => dirname( __DIR__ ) . '/cache',
 			// Plugin identity keys consumed by the update response processor.
 			'plugin.file'    => basename( $this->root_file ),
 			'plugin.slug'    => basename( dirname( $this->root_file ) ),
@@ -131,6 +134,8 @@ class GithubWpUpdater extends Main
 			'github.user'    => '',
 			'github.repo'    => '',
 			'github.branch'  => 'main',
+			'github.token'   => '',
+			'github.asset'   => '',
 		];
 
 		// array_replace_recursive lets callers override individual nested keys
@@ -162,21 +167,21 @@ class GithubWpUpdater extends Main
 		$plugin_url = trailingslashit( $config['config.url'] );
 
 		if (
-			empty( $config['plugin.icons']['default'] )
+			$this->shouldPromoteKnownAsset( $config, 'plugin.icons', 'default', 'icon-256x256.jpg' )
 			&& is_file( $plugin_dir . 'assets/icon-256x256.jpg' )
 		) {
 			$config['plugin.icons']['default'] = $plugin_url . 'assets/icon-256x256.jpg';
 		}
 
 		if (
-			empty( $config['plugin.banners']['low'] )
+			$this->shouldPromoteKnownAsset( $config, 'plugin.banners', 'low', 'banner-772x250.jpg' )
 			&& is_file( $plugin_dir . 'assets/banner-772x250.jpg' )
 		) {
 			$config['plugin.banners']['low'] = $plugin_url . 'assets/banner-772x250.jpg';
 		}
 
 		if (
-			empty( $config['plugin.banners']['high'] )
+			$this->shouldPromoteKnownAsset( $config, 'plugin.banners', 'high', 'banner-1544x500.jpg' )
 			&& is_file( $plugin_dir . 'assets/banner-1544x500.jpg' )
 		) {
 			$config['plugin.banners']['high'] = $plugin_url . 'assets/banner-1544x500.jpg';
@@ -184,19 +189,153 @@ class GithubWpUpdater extends Main
 
 		return $config;
 	}
+
 	/**
-	* Get definitions that should be added to the service container
-	*
-	* @return array<string, mixed>
-	*/
-	public static function getServiceDefinitions(): array
+	 * Determine whether a known plugin asset should replace the current value.
+	 *
+	 * @param array<string, mixed> $config Current config array.
+	 * @param string               $group  Asset config group.
+	 * @param string               $key    Asset config key.
+	 * @param string               $file   Bundled asset file name.
+	 *
+	 * @return bool
+	 */
+	protected function shouldPromoteKnownAsset( array $config, string $group, string $key, string $file ): bool
 	{
-		return [
-			Controllers\ProcessorController::class => ServiceLocator::autowire(),
-			Controllers\ServiceController::class   => ServiceLocator::autowire(),
-			Controllers\ProviderController::class  => ServiceLocator::autowire(),
-		];
-	} 
+		$current = $config[ $group ][ $key ] ?? '';
+		$bundled = trailingslashit( plugin_dir_url( __FILE__ ) ) . 'assets/' . $file;
+
+		return empty( $current ) || $bundled === $current;
+	}
+	/**
+	 * Definition file loaded into the container.
+	 *
+	 * @return string
+	 */
+	protected function getDefinitionsFile(): string
+	{
+		return __DIR__ . '/definitions.php';
+	}
+
+	/**
+	 * Directory where compiled container files are stored.
+	 *
+	 * @return string|false
+	 */
+	protected function getContainerCacheDirectory(): string|false
+	{
+		return ! empty( $this->config['config.cacheDir'] ) && is_string( $this->config['config.cacheDir'] )
+			? $this->config['config.cacheDir']
+			: false;
+	}
+
+	/**
+	 * Normalize config values before hashing them into a cache key.
+	 *
+	 * @param mixed $value Config value.
+	 *
+	 * @return mixed
+	 */
+	protected function normalizeCacheKeyValue( mixed $value ): mixed
+	{
+		if ( is_array( $value ) ) {
+			ksort( $value );
+
+			return array_map( [ $this, 'normalizeCacheKeyValue' ], $value );
+		}
+
+		if ( is_object( $value ) ) {
+			return get_class( $value );
+		}
+
+		if ( is_resource( $value ) ) {
+			return get_resource_type( $value );
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Build the cache key used in the compiled container class name.
+	 *
+	 * @return string
+	 */
+	protected function getContainerCacheKey(): string
+	{
+		$definitions_file = $this->getDefinitionsFile();
+
+		return substr(
+			hash(
+				'sha256',
+				serialize(
+					[
+						'config'      => $this->normalizeCacheKeyValue( $this->config ),
+						'definitions' => is_file( $definitions_file )
+							? filemtime( $definitions_file ) . ':' . filesize( $definitions_file )
+							: null,
+					]
+				)
+			),
+			0,
+			16
+		);
+	}
+
+	/**
+	 * Get the compiled container class name for the current config.
+	 *
+	 * @return string
+	 */
+	protected function getCompiledContainerClass(): string
+	{
+		return 'container_' . $this->getContainerCacheKey();
+	}
+
+	/**
+	 * Determine whether the compiled container can be used or generated.
+	 *
+	 * @param string $cache_dir Cache directory.
+	 * @param string $class     Compiled container class name.
+	 *
+	 * @return bool
+	 */
+	protected function canUseCompiledContainer( string $cache_dir, string $class ): bool
+	{
+		if ( is_readable( "{$cache_dir}/{$class}.php" ) ) {
+			return true;
+		}
+
+		return is_dir( $cache_dir )
+			? is_writable( $cache_dir )
+			: wp_mkdir_p( $cache_dir ) && is_writable( $cache_dir );
+	}
+
+	/**
+	 * Build the DI container.
+	 *
+	 * @return void
+	 */
+	protected function initContainer(): void
+	{
+		$builder = new \DI\ContainerBuilder();
+		$builder->useAttributes( true );
+
+		$cache_dir = $this->getContainerCacheDirectory();
+
+		if ( false !== $cache_dir && 'production' === wp_get_environment_type() ) {
+			$container_class = $this->getCompiledContainerClass();
+
+			if ( $this->canUseCompiledContainer( $cache_dir, $container_class ) ) {
+				$builder->enableCompilation( $cache_dir, $container_class );
+			}
+		}
+
+		$builder->addDefinitions( $this->config );
+		$builder->addDefinitions( $this->getDefinitionsFile() );
+
+		$this->services = $builder->build();
+	}
+
 	/**
 	 * Register filters and mount the updater.
 	 *
@@ -210,7 +349,88 @@ class GithubWpUpdater extends Main
 	{
 		add_filter( "{$this->config['config.package']}_config", [ $this, 'setKnownAssets' ], 5 );
 
-		parent::mount();
+		$this->config = apply_filters(
+			"{$this->config['config.package']}_config",
+			$this->config
+		);
+
+		if ( ! $this->validateConfig() ) {
+			return;
+		}
+
+		if ( ! $this->services instanceof \DI\Container ) {
+			$this->initContainer();
+		}
+
+		$this->services->get( Controller::class );
+	}
+
+	/**
+	 * Validate required runtime config before building the container.
+	 *
+	 * @return bool
+	 */
+	protected function validateConfig(): bool
+	{
+		$required = [
+			'github.user',
+			'github.repo',
+			'plugin.file',
+			'plugin.slug',
+			'plugin.version',
+		];
+
+		$missing = array_filter(
+			$required,
+			fn( string $key ): bool => empty( $this->config[ $key ] )
+		);
+
+		if ( empty( $missing ) ) {
+			return true;
+		}
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				sprintf(
+					'GitHub WP Updater not mounted. Missing required config: %s',
+					implode( ', ', $missing )
+				)
+			);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Set or replace a service in the built container.
+	 *
+	 * @param string $key   Service entry key.
+	 * @param mixed  $value Service instance or value.
+	 *
+	 * @return void
+	 * @throws \LogicException When the container has not been built.
+	 */
+	public function setInstance( string $key, mixed $value ): void
+	{
+		if ( ! $this->services instanceof \DI\Container ) {
+			throw new \LogicException( 'Cannot set service before container is built.' );
+		}
+
+		$this->services->set( $key, $value );
+	}
+
+	/**
+	 * Get a service instance from the container.
+	 *
+	 * @param string $service Fully-qualified class name or container entry key.
+	 *
+	 * @return object|null The service, or null if the container is not yet built.
+	 */
+	public function getInstance( string $service ): ?object
+	{
+		return $this->services instanceof \DI\Container && $this->services->has( $service )
+			? $this->services->get( $service )
+			: null;
 	}
 	/**
 	 * Attempt to infer the root file of the plugin that owns this updater install.
@@ -248,7 +468,8 @@ class GithubWpUpdater extends Main
 		// expensive get_plugins() filesystem scan.
 		$plugins_dir = realpath( WP_PLUGIN_DIR );
 
-		if ( false === $plugins_dir
+		if (
+			false === $plugins_dir
 			|| ! str_starts_with( $current_dir, $plugins_dir . DIRECTORY_SEPARATOR )
 		) {
 			return '';

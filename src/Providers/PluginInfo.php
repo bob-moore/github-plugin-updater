@@ -13,9 +13,9 @@
 
 namespace Bmd\GithubWpUpdater\Providers;
 
-use Bmd\GithubWpUpdater\Services\ReadmeParser,
-	Bmd\GithubWpUpdater\Services\RemoteRequest,
-	Bmd\WPFramework\Abstracts;
+use Bmd\GithubWpUpdater\Module;
+use Bmd\GithubWpUpdater\Services\ReadmeParser;
+use Bmd\GithubWpUpdater\Services\RemoteRequest;
 
 use DI\Attribute\Inject;
 
@@ -24,7 +24,7 @@ use DI\Attribute\Inject;
  *
  * @subpackage Providers
  */
-class PluginInfo extends Abstracts\Module
+class PluginInfo extends Module
 {
 	/**
 	 * Public constructor.
@@ -77,7 +77,13 @@ class PluginInfo extends Abstracts\Module
 		$response['new_version'] = $response['version'];
 		$response                = (object) apply_filters( "{$this->package}_update_response", $response );
 
-		$readme            = $this->remote_request->requestRawContent( 'readme.md' );
+		$response->version = $response->new_version;
+		$response->slug    = $this->slug;
+		$response->plugin  = "{$this->slug}/{$this->file}";
+		$response->name    = $response->name ?? $this->slug;
+		$response->homepage = $response->plugin_uri ?? $response->url ?? '';
+
+		$readme            = $this->remote_request->requestReadmeContent();
 		$response->sections = ! empty( $readme )
 			? $this->readme_parser->parseSections( $readme )
 			: [];

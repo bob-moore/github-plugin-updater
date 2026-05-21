@@ -50,7 +50,7 @@
         "10up/wp_mock": "*"
     },
     "require": {
-        "bmd/wp-framework": "^0.2",
+        "php-di/php-di": "^7.1",
         "league/commonmark": "^2.6"
     },
     "archive": {

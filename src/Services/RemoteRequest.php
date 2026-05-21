@@ -13,8 +13,8 @@
 
 namespace Bmd\GithubWpUpdater\Services;
 
-use Bmd\GithubWpUpdater\Processors\PluginHeaders,
-	Bmd\WPFramework\Abstracts;
+use Bmd\GithubWpUpdater\Module;
+use Bmd\GithubWpUpdater\Processors\PluginHeaders;
 
 use DI\Attribute\Inject;
 
@@ -23,8 +23,13 @@ use DI\Attribute\Inject;
  *
  * @subpackage Services
  */
-class RemoteRequest extends Abstracts\Module
+class RemoteRequest extends Module
 {
+	/**
+	 * Short cache TTL for failed GitHub requests.
+	 */
+	protected const FAILURE_CACHE_TTL = 900;
+
 	/**
 	 * Public constructor.
 	 *
@@ -34,6 +39,7 @@ class RemoteRequest extends Abstracts\Module
 	 * @param string        $branch                  The branch to use.
 	 * @param string        $plugin_file             The plugin file.
 	 * @param string        $package                 The package name.
+	 * @param string        $github_token            Optional GitHub token.
 	 */
 	#[Inject(
 		[
@@ -41,6 +47,7 @@ class RemoteRequest extends Abstracts\Module
 			'github_repo' => 'github.repo',
 			'branch'      => 'github.branch',
 			'plugin_file' => 'plugin.file',
+			'github_token' => 'github.token',
 		]
 	)]
 	public function __construct(
@@ -49,7 +56,8 @@ class RemoteRequest extends Abstracts\Module
 		protected string $github_repo = '',
 		protected string $branch = 'main',
 		protected string $plugin_file = '',
-		string $package = ''
+		string $package = '',
+		protected string $github_token = ''
 	) {
 		parent::__construct( $package );
 	}
@@ -90,15 +98,17 @@ class RemoteRequest extends Abstracts\Module
 	 * the local file.
 	 *
 	 * @param array<string, string> $default The default plugin headers.
+	 * @param string|null           $ref     Optional Git ref.
 	 *
 	 * @return array<string, string>
 	 */
-	public function getPluginInfo( $default = [] ): array
+	public function getPluginInfo( $default = [], ?string $ref = null ): array
 	{
-		$cache_key = $this->getCacheKey( 'remote_info' );
+		$ref       = $ref ? $ref : $this->branch;
+		$cache_key = $this->getCacheKey( 'remote_info', $ref );
 		$cached    = wp_cache_get( $cache_key, $this->package );
 
-		if ( $cached ) {
+		if ( false !== $cached ) {
 			return $cached;
 		}
 
@@ -106,7 +116,7 @@ class RemoteRequest extends Abstracts\Module
 			'https://raw.githubusercontent.com/%s/%s/%s/%s',
 			$this->github_user,
 			$this->github_repo,
-			$this->branch,
+			$ref,
 			$this->plugin_file
 		);
 
@@ -116,7 +126,11 @@ class RemoteRequest extends Abstracts\Module
 			is_wp_error( $response )
 			|| 200 !== wp_remote_retrieve_response_code( $response )
 		) {
-			return apply_filters( "{$this->package}_default_plugin_headers", $default );
+			$defaults = apply_filters( "{$this->package}_default_plugin_headers", $default );
+
+			wp_cache_set( $cache_key, $defaults, $this->package, self::FAILURE_CACHE_TTL );
+
+			return $defaults;
 		}
 
 		$body = wp_remote_retrieve_body( $response );
@@ -139,7 +153,7 @@ class RemoteRequest extends Abstracts\Module
 		$cache_key = $this->getCacheKey( "release_{$version}" );
 		$cached    = wp_cache_get( $cache_key, $this->package );
 
-		if ( $cached ) {
+		if ( false !== $cached ) {
 			return $cached;
 		}
 
@@ -156,6 +170,8 @@ class RemoteRequest extends Abstracts\Module
 			is_wp_error( $response )
 			|| 200 !== wp_remote_retrieve_response_code( $response )
 		) {
+			wp_cache_set( $cache_key, null, $this->package, self::FAILURE_CACHE_TTL );
+
 			return null;
 		}
 
@@ -164,6 +180,52 @@ class RemoteRequest extends Abstracts\Module
 		$release_info = json_decode( $body );
 
 		if ( ! is_object( $release_info ) ) {
+			wp_cache_set( $cache_key, null, $this->package, self::FAILURE_CACHE_TTL );
+
+			return null;
+		}
+
+		wp_cache_set( $cache_key, $release_info, $this->package, HOUR_IN_SECONDS );
+
+		return $release_info;
+	}
+
+	/**
+	 * Request the latest release data from the GitHub repository.
+	 *
+	 * @return object|null
+	 */
+	public function requestLatestRelease(): ?object
+	{
+		$cache_key = $this->getCacheKey( 'release_latest' );
+		$cached    = wp_cache_get( $cache_key, $this->package );
+
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
+		$request_url = sprintf(
+			'https://api.github.com/repos/%s/%s/releases/latest',
+			$this->github_user,
+			$this->github_repo
+		);
+
+		$response = wp_remote_get( $request_url, $this->getRequestArgs() );
+
+		if (
+			is_wp_error( $response )
+			|| 200 !== wp_remote_retrieve_response_code( $response )
+		) {
+			wp_cache_set( $cache_key, null, $this->package, self::FAILURE_CACHE_TTL );
+
+			return null;
+		}
+
+		$release_info = json_decode( wp_remote_retrieve_body( $response ) );
+
+		if ( ! is_object( $release_info ) ) {
+			wp_cache_set( $cache_key, null, $this->package, self::FAILURE_CACHE_TTL );
+
 			return null;
 		}
 
@@ -174,17 +236,20 @@ class RemoteRequest extends Abstracts\Module
 	/**
 	 * Request the raw content of a file from the github repository.
 	 *
-	 * @param string $file The file to request.
+	 * @param string      $file The file to request.
+	 * @param string|null $ref  Optional Git ref.
 	 *
 	 * @return string|null
 	 */
-	public function requestRawContent( string $file ): ?string
+	public function requestRawContent( string $file, ?string $ref = null ): ?string
 	{
+		$ref = $ref ? $ref : $this->branch;
+
 		$request_url = sprintf(
 			'https://raw.githubusercontent.com/%s/%s/%s/%s',
 			$this->github_user,
 			$this->github_repo,
-			$this->branch,
+			$ref,
 			$file
 		);
 
@@ -199,15 +264,38 @@ class RemoteRequest extends Abstracts\Module
 
 		return wp_remote_retrieve_body( $response );
 	}
+
+	/**
+	 * Request readme content using common filename fallbacks.
+	 *
+	 * @param string|null $ref Git ref to read from.
+	 *
+	 * @return string|null
+	 */
+	public function requestReadmeContent( ?string $ref = null ): ?string
+	{
+		foreach ( [ 'readme.md', 'README.md', 'readme.txt' ] as $file ) {
+			$content = $this->requestRawContent( $file, $ref );
+
+			if ( ! empty( $content ) ) {
+				return $content;
+			}
+		}
+
+		return null;
+	}
 	/**
 	 * Build a unique cache key for repository-specific data.
 	 *
-	 * @param string $suffix The cache key suffix.
+	 * @param string      $suffix The cache key suffix.
+	 * @param string|null $ref    Optional Git ref.
 	 *
 	 * @return string
 	 */
-	protected function getCacheKey( string $suffix ): string
+	protected function getCacheKey( string $suffix, ?string $ref = null ): string
 	{
+		$ref = $ref ? $ref : $this->branch;
+
 		return implode(
 			':',
 			array_filter(
@@ -215,7 +303,7 @@ class RemoteRequest extends Abstracts\Module
 					$suffix,
 					$this->github_user,
 					$this->github_repo,
-					$this->branch,
+					$ref,
 					$this->plugin_file,
 				],
 				static fn( string $value ): bool => '' !== $value
@@ -229,12 +317,18 @@ class RemoteRequest extends Abstracts\Module
 	 */
 	protected function getRequestArgs(): array
 	{
-		return [
+		$args = [
 			'timeout'    => 15,
-			'user-agent' => $this->package ?: 'github-wp-updater',
+			'user-agent' => '' !== $this->package ? $this->package : 'github-wp-updater',
 			'headers'    => [
 				'Accept' => 'application/vnd.github+json',
 			],
 		];
+
+		if ( '' !== $this->github_token ) {
+			$args['headers']['Authorization'] = 'Bearer ' . $this->github_token;
+		}
+
+		return $args;
 	}
 }

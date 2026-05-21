@@ -13,7 +13,7 @@
 
 namespace Bmd\GithubWpUpdater\Services;
 
-use Bmd\WPFramework\Abstracts;
+use Bmd\GithubWpUpdater\Module;
 use League\CommonMark\CommonMarkConverter;
 
 /**
@@ -21,7 +21,7 @@ use League\CommonMark\CommonMarkConverter;
  *
  * @subpackage Services
  */
-class ReadmeParser extends Abstracts\Module
+class ReadmeParser extends Module
 {
 	/**
 	 * Public constructor
@@ -50,12 +50,12 @@ class ReadmeParser extends Abstracts\Module
 		$in_section      = false;
 
 		foreach ( $lines as $line ) {
-			if ( preg_match( '/^# (.+)$/', $line, $matches ) ) {
+			if ( preg_match( '/^(?:#{1,2}\s+(.+)|==\s*(.+?)\s*==)$/', $line, $matches ) ) {
 				if ( $in_section && ( null !== $current_section ) ) {
 					$sections[ $current_section ] = $this->markdown_parser->convert( trim( implode( "\n", $current_content ) ) )->getContent();
 					$current_content              = [];
 				}
-				$current_section = trim( $matches[1] );
+				$current_section = trim( $matches[1] ? $matches[1] : $matches[2] );
 				$in_section      = true;
 				continue;
 			}

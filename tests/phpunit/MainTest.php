@@ -39,6 +39,7 @@ final class MainTest extends TestCase
 
 		$this->assertSame( plugin_dir_path( $fixture['file'] ), $config['config.dir'] );
 		$this->assertSame( plugin_dir_url( $fixture['file'] ), $config['config.url'] );
+		$this->assertSame( dirname( __DIR__, 2 ) . '/cache', $config['config.cacheDir'] );
 		$this->assertSame( basename( $fixture['dir'] ), $config['plugin.slug'] );
 		$this->assertSame( 'example-plugin.php', $config['plugin.file'] );
 		$this->assertSame( '1.2.3', $config['plugin.version'] );
@@ -222,6 +223,83 @@ final class MainTest extends TestCase
 	}
 
 	/**
+	 * Ensures discovered plugin assets replace bundled fallback asset URLs.
+	 *
+	 * @covers \Bmd\GithubWpUpdater::setKnownAssets
+	 */
+	public function testSetKnownAssetsReplacesBundledFallbacks(): void
+	{
+		$asset_fixture = $this->makeAssetFixture( 'assets-fallback', [
+			'icon-256x256.jpg',
+		] );
+
+		$main = $this->newUpdaterForAssetMutationTests();
+
+		$config                            = $this->emptyAssetConfig( $asset_fixture['dir'] );
+		$config['plugin.icons']['default'] = trailingslashit( plugin_dir_url( dirname( __DIR__, 2 ) . '/src/GithubWpUpdater.php' ) ) . 'assets/icon-256x256.jpg';
+
+		$updated = $main->setKnownAssets( $config );
+
+		$this->assertSame( 'https://example.com/example-plugin/assets/icon-256x256.jpg', $updated['plugin.icons']['default'] );
+
+		$this->removeAssetFixture( $asset_fixture );
+	}
+
+	/**
+	 * Ensures compiled container classes use the generic container prefix.
+	 *
+	 * @covers \Bmd\GithubWpUpdater::getCompiledContainerClass
+	 */
+	public function testCompiledContainerClassUsesContainerPrefix(): void
+	{
+		$main = $this->newUpdaterForAssetMutationTests();
+
+		$this->assertStringStartsWith( 'container_', $main->exposeCompiledContainerClass() );
+	}
+
+	/**
+	 * Ensures custom cache directories are read from config.
+	 *
+	 * @covers \Bmd\GithubWpUpdater::getContainerCacheDirectory
+	 */
+	public function testContainerCacheDirectoryUsesConfigCacheDir(): void
+	{
+		$fixture = $this->makeTempPlugin( 'custom-cache-dir' );
+
+		WP_Mock::userFunction( 'get_file_data', [ 'times' => 1, 'return' => [ 'version' => '1.0.0' ] ] );
+
+		$main = new TestableGithubWpUpdater(
+			$fixture['file'],
+			[ 'config.cacheDir' => '/tmp/custom-github-updater-cache' ]
+		);
+
+		$this->assertSame( '/tmp/custom-github-updater-cache', $main->exposeContainerCacheDirectory() );
+
+		$this->removeTempPlugin( $fixture );
+	}
+
+	/**
+	 * Ensures falsey cache directory config disables compilation.
+	 *
+	 * @covers \Bmd\GithubWpUpdater::getContainerCacheDirectory
+	 */
+	public function testContainerCacheDirectoryReturnsFalseWhenConfigCacheDirDisabled(): void
+	{
+		$fixture = $this->makeTempPlugin( 'disabled-cache-dir' );
+
+		WP_Mock::userFunction( 'get_file_data', [ 'times' => 1, 'return' => [ 'version' => '1.0.0' ] ] );
+
+		$main = new TestableGithubWpUpdater(
+			$fixture['file'],
+			[ 'config.cacheDir' => false ]
+		);
+
+		$this->assertFalse( $main->exposeContainerCacheDirectory() );
+
+		$this->removeTempPlugin( $fixture );
+	}
+
+	/**
 	 * Ensures getRootFileFromPath bails when current directory is outside WP_PLUGIN_DIR.
 	 *
 	 * @covers \Bmd\GithubWpUpdater::getRootFileFromPath
@@ -260,7 +338,7 @@ final class MainTest extends TestCase
 				'times'  => 1,
 				'return' => [
 					'src/GithubWpUpdater.php' => [],
-					'vendor/bmd/wp-framework/includes/Main.php' => [],
+					'vendor/acme/other-package/includes/Main.php' => [],
 				],
 			]
 		);
@@ -419,5 +497,25 @@ final class TestableGithubWpUpdater extends GithubWpUpdater
 	public function exposeGetRootFileFromPath(): string
 	{
 		return $this->getRootFileFromPath();
+	}
+
+	/**
+	 * Expose protected compiled container class name for direct assertions.
+	 *
+	 * @return string
+	 */
+	public function exposeCompiledContainerClass(): string
+	{
+		return $this->getCompiledContainerClass();
+	}
+
+	/**
+	 * Expose protected cache directory resolution for direct assertions.
+	 *
+	 * @return string|false
+	 */
+	public function exposeContainerCacheDirectory(): string|false
+	{
+		return $this->getContainerCacheDirectory();
 	}
 }

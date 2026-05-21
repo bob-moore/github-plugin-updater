@@ -26,20 +26,10 @@ final class UpdatesTest extends TestCase
     {
         $remote = $this->createMock( RemoteRequest::class );
         $remote->expects( $this->once() )
-            ->method( 'getPluginInfo' )
-            ->willReturn(
-                [
-                    'version'      => '2.0.0',
-                    'requires'     => '6.5',
-                    'tested'       => '6.6',
-                    'requires_php' => PHP_VERSION,
-                ]
-            );
-        $remote->expects( $this->once() )
-            ->method( 'requestRelease' )
-            ->with( '2.0.0' )
+            ->method( 'requestLatestRelease' )
             ->willReturn(
                 (object) [
+                    'tag_name' => '2.0.0',
                     'assets' => [
                         (object) [
                             'name' => 'plugin.zip',
@@ -48,6 +38,17 @@ final class UpdatesTest extends TestCase
                     ],
                     'created_at' => '2026-04-01T00:00:00Z',
                     'published_at' => '2026-04-02T00:00:00Z',
+                ]
+            );
+        $remote->expects( $this->once() )
+            ->method( 'getPluginInfo' )
+            ->with( [], '2.0.0' )
+            ->willReturn(
+                [
+                    'version'      => '2.0.0',
+                    'requires'     => '6.5',
+                    'tested'       => '6.6',
+                    'requires_php' => PHP_VERSION,
                 ]
             );
 
@@ -86,24 +87,26 @@ final class UpdatesTest extends TestCase
     public function testUpdateSkipsReleaseWithoutZipAsset(): void
     {
         $remote = $this->createMock( RemoteRequest::class );
+		$remote->expects( $this->once() )
+			->method( 'requestLatestRelease' )
+			->willReturn(
+				(object) [
+					'tag_name'     => '2.0.0',
+					'assets'       => [],
+					'zipball_url'  => 'https://example.com/github-source.zip',
+					'created_at'   => '2026-04-01T00:00:00Z',
+					'published_at' => '2026-04-02T00:00:00Z',
+				]
+			);
         $remote->expects( $this->once() )
             ->method( 'getPluginInfo' )
+            ->with( [], '2.0.0' )
             ->willReturn(
                 [
                     'version'      => '2.0.0',
                     'requires'     => '6.5',
                     'tested'       => '6.6',
                     'requires_php' => PHP_VERSION,
-                ]
-            );
-        $remote->expects( $this->once() )
-            ->method( 'requestRelease' )
-            ->with( '2.0.0' )
-            ->willReturn(
-                (object) [
-                    'assets' => [],
-                    'created_at' => '2026-04-01T00:00:00Z',
-                    'published_at' => '2026-04-02T00:00:00Z',
                 ]
             );
 
@@ -115,8 +118,6 @@ final class UpdatesTest extends TestCase
                 'return' => '6.5',
             ]
         );
-
-        WP_Mock::userFunction( 'apply_filters', [ 'times' => 0 ] );
 
         $provider = new Updates(
             $remote,
@@ -131,8 +132,67 @@ final class UpdatesTest extends TestCase
             'response' => [],
         ];
 
-        $result = $provider->update( $transient );
+		$result = $provider->update( $transient );
 
-        $this->assertSame( [], $result->response );
-    }
+		$this->assertSame( [], $result->response );
+		$this->assertArrayHasKey( 'github-plugin-updater/plugin.php', $result->no_update );
+	}
+
+	/**
+	 * Ensures GitHub-generated source zip URLs are never used as update packages.
+	 *
+	 * @covers \Bmd\GithubWpUpdater\Providers\Updates::update
+	 */
+	public function testUpdateSkipsReleaseWithOnlyZipballUrl(): void
+	{
+		$remote = $this->createMock( RemoteRequest::class );
+		$remote->expects( $this->once() )
+			->method( 'requestLatestRelease' )
+			->willReturn(
+				(object) [
+						'tag_name'     => '2.0.0',
+						'zipball_url'  => 'https://example.com/github-source.zip',
+						'created_at'   => '2026-04-01T00:00:00Z',
+						'published_at' => '2026-04-02T00:00:00Z',
+				]
+			);
+		$remote->expects( $this->once() )
+			->method( 'getPluginInfo' )
+			->with( [], '2.0.0' )
+			->willReturn(
+				[
+					'version'      => '2.0.0',
+					'requires'     => '6.5',
+					'tested'       => '6.6',
+					'requires_php' => PHP_VERSION,
+				]
+			);
+
+		WP_Mock::userFunction(
+			'get_bloginfo',
+			[
+				'times'  => 1,
+				'args'   => [ 'version' ],
+				'return' => '6.5',
+			]
+		);
+
+		$provider = new Updates(
+			$remote,
+			'1.0.0',
+			'github-plugin-updater',
+			'plugin.php',
+			'github_wp_updater'
+		);
+
+		$transient = (object) [
+			'checked'  => [ 'github-plugin-updater/plugin.php' => '1.0.0' ],
+			'response' => [],
+		];
+
+		$result = $provider->update( $transient );
+
+		$this->assertSame( [], $result->response );
+		$this->assertArrayHasKey( 'github-plugin-updater/plugin.php', $result->no_update );
+	}
 }

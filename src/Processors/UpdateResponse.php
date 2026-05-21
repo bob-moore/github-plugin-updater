@@ -13,7 +13,7 @@
 
 namespace Bmd\GithubWpUpdater\Processors;
 
-use Bmd\WPFramework\Abstracts;
+use Bmd\GithubWpUpdater\Module;
 
 use DI\Attribute\Inject;
 
@@ -22,7 +22,7 @@ use DI\Attribute\Inject;
  *
  * @subpackage Processors
  */
-class UpdateResponse extends Abstracts\Module
+class UpdateResponse extends Module
 {
 	/**
 	 * Public constructor.

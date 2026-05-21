@@ -53,6 +53,35 @@ final class ReadmeParserTest extends TestCase
     }
 
     /**
+     * Ensures parseSections() supports WordPress readme and H2 section headings.
+     *
+     * @covers \Bmd\GithubWpUpdater\Services\ReadmeParser::parseSections
+     */
+    public function testParseSectionsSupportsWordPressAndH2Headings(): void
+    {
+        $parser = new ReadmeParser( new CommonMarkConverter(), 'github_wp_updater' );
+
+        $markdown = implode(
+            "\n",
+            [
+                '== Description ==',
+                'WordPress style description.',
+                '',
+                '## Changelog',
+                '* 1.0.0 - First release.',
+            ]
+        );
+
+        $sections = $parser->parseSections( $markdown );
+
+        $this->assertArrayHasKey( 'Description', $sections );
+        $this->assertArrayHasKey( 'Changelog', $sections );
+        $this->assertStringContainsString( '<p>WordPress style description.</p>', $sections['Description'] );
+        $this->assertStringContainsString( '<ul>', $sections['Changelog'] );
+    }
+
+
+    /**
      * Ensures parseSections() returns an empty array when no H1 sections are present.
      *
      * @covers \Bmd\GithubWpUpdater\Services\ReadmeParser::parseSections

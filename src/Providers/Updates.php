@@ -13,8 +13,8 @@
 
 namespace Bmd\GithubWpUpdater\Providers;
 
-use Bmd\GithubWpUpdater\Services\RemoteRequest,
-	Bmd\WPFramework\Abstracts;
+use Bmd\GithubWpUpdater\Module;
+use Bmd\GithubWpUpdater\Services\RemoteRequest;
 
 use DI\Attribute\Inject;
 
@@ -23,8 +23,15 @@ use DI\Attribute\Inject;
  *
  * @subpackage Providers
  */
-class Updates extends Abstracts\Module
+class Updates extends Module
 {
+	/**
+	 * Optional release asset name to prefer.
+	 *
+	 * @var string
+	 */
+	protected string $release_asset = '';
+
 	/**
 	 * Public constructor.
 	 *
@@ -33,12 +40,14 @@ class Updates extends Abstracts\Module
 	 * @param string        $plugin_slug    The plugin slug.
 	 * @param string        $plugin_file    The plugin file.
 	 * @param string        $package        The package name.
+	 * @param string        $release_asset  Optional release asset name.
 	 */
 	#[Inject(
 		[
-			'version'     => 'plugin.version',
-			'plugin_slug' => 'plugin.slug',
-			'plugin_file' => 'plugin.file',
+			'version'       => 'plugin.version',
+			'plugin_slug'   => 'plugin.slug',
+			'plugin_file'   => 'plugin.file',
+			'release_asset' => 'github.asset',
 		]
 	)]
 	public function __construct(
@@ -47,7 +56,10 @@ class Updates extends Abstracts\Module
 		protected string $plugin_slug,
 		protected string $plugin_file,
 		string $package = '',
+		string $release_asset = '',
 	) {
+		$this->release_asset = $release_asset;
+
 		parent::__construct( $package );
 	}
 	/**
@@ -57,8 +69,18 @@ class Updates extends Abstracts\Module
 	 */
 	protected function checkUpdates(): ?object
 	{
+		$release = $this->remote_request->requestLatestRelease();
+
+		if ( ! $release ) {
+			return null;
+		}
+
+		$release_ref = isset( $release->tag_name ) && is_string( $release->tag_name )
+			? $release->tag_name
+			: null;
+
 		$remote = wp_parse_args(
-			$this->remote_request->getPluginInfo(),
+			$this->remote_request->getPluginInfo( [], $release_ref ),
 			[
 				'version'      => '',
 				'requires'     => '',
@@ -67,18 +89,16 @@ class Updates extends Abstracts\Module
 			]
 		);
 
+		if ( empty( $remote['version'] ) && null !== $release_ref ) {
+			$remote['version'] = $this->normalizeVersion( $release_ref );
+		}
+
 		if (
 			empty( $remote['version'] )
 			|| ! version_compare( $this->version, $remote['version'], '<' )
 			|| ( ! empty( $remote['requires'] ) && ! version_compare( $remote['requires'], get_bloginfo( 'version' ), '<=' ) )
 			|| ( ! empty( $remote['requires_php'] ) && ! version_compare( $remote['requires_php'], PHP_VERSION, '<=' ) )
 		) {
-			return null;
-		}
-
-		$release = $this->remote_request->requestRelease( $remote['version'] );
-
-		if ( ! $release ) {
 			return null;
 		}
 
@@ -95,8 +115,8 @@ class Updates extends Abstracts\Module
 				'package'      => $package,
 				'tested'       => $remote['tested'],
 				'requires_php' => $remote['requires_php'],
-				'added'        => $release->created_at,
-				'last_updated' => $release->published_at,
+				'added'        => $release->created_at ?? '',
+				'last_updated' => $release->published_at ?? '',
 			]
 		);
 	}
@@ -124,6 +144,8 @@ class Updates extends Abstracts\Module
 		$updates = $this->checkUpdates();
 
 		if ( ! $updates ) {
+			$this->addNoUpdateResponse( $transient );
+
 			return $transient;
 		}
 
@@ -146,13 +168,55 @@ class Updates extends Abstracts\Module
 
 		foreach ( $release->assets as $asset ) {
 			if (
+				'' !== $this->release_asset
+				&& isset( $asset->name, $asset->browser_download_url )
+				&& $this->release_asset === $asset->name
+			) {
+				return $asset->browser_download_url;
+			}
+
+			if (
 				isset( $asset->name, $asset->browser_download_url )
-				&& str_contains( $asset->name, 'zip' )
+				&& str_ends_with( strtolower( $asset->name ), '.zip' )
 			) {
 				return $asset->browser_download_url;
 			}
 		}
 
 		return null;
+	}
+
+	/**
+	 * Add a no-update response so WordPress still receives plugin metadata.
+	 *
+	 * @param object $transient The update transient.
+	 *
+	 * @return void
+	 */
+	protected function addNoUpdateResponse( object $transient ): void
+	{
+		if ( ! isset( $transient->no_update ) || ! is_array( $transient->no_update ) ) {
+			$transient->no_update = [];
+		}
+
+		$transient->no_update[ "{$this->plugin_slug}/{$this->plugin_file}" ] = (object) apply_filters(
+			"{$this->package}_update_response",
+			[
+				'new_version' => $this->version,
+				'package'     => '',
+			]
+		);
+	}
+
+	/**
+	 * Normalize a release tag for semantic version comparison.
+	 *
+	 * @param string $version Release version or tag.
+	 *
+	 * @return string
+	 */
+	protected function normalizeVersion( string $version ): string
+	{
+		return preg_replace( '/^v(?=\d)/i', '', $version ) ?? $version;
 	}
 }

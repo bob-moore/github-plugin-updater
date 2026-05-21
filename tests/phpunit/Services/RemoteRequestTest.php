@@ -109,6 +109,14 @@ final class RemoteRequestTest extends TestCase
             ]
         );
 
+        WP_Mock::userFunction(
+            'wp_cache_set',
+            [
+                'times' => 1,
+                'args'  => [ $cacheKey, $default, 'github_wp_updater', 900 ],
+            ]
+        );
+
         $processor = $this->createMock( PluginHeaders::class );
         $processor->expects( $this->never() )->method( 'getFileData' );
 
@@ -206,6 +214,68 @@ final class RemoteRequestTest extends TestCase
     }
 
     /**
+     * Ensures GitHub tokens are sent as bearer authorization headers.
+     *
+     * @covers \Bmd\GithubWpUpdater\Services\RemoteRequest::requestRawContent
+     */
+    public function testRequestRawContentSendsGithubTokenHeader(): void
+    {
+        $request = [ 'ok' => true ];
+
+        WP_Mock::userFunction(
+            'wp_remote_get',
+            [
+                'times'  => 1,
+                'args'   => [
+                    'https://raw.githubusercontent.com/acme/test-repo/2.0.0/readme.md',
+                    [
+                        'timeout'    => 15,
+                        'user-agent' => 'github_wp_updater',
+                        'headers'    => [
+                            'Accept' => 'application/vnd.github+json',
+                            'Authorization' => 'Bearer test-token',
+                        ],
+                    ],
+                ],
+                'return' => $request,
+            ]
+        );
+
+        WP_Mock::userFunction(
+            'wp_remote_retrieve_response_code',
+            [
+                'times'  => 1,
+                'args'   => [ $request ],
+                'return' => 200,
+            ]
+        );
+
+        WP_Mock::userFunction(
+            'wp_remote_retrieve_body',
+            [
+                'times'  => 1,
+                'args'   => [ $request ],
+                'return' => 'Readme content.',
+            ]
+        );
+
+        $processor = $this->createMock( PluginHeaders::class );
+
+        $service = new RemoteRequest(
+            $processor,
+            'acme',
+            'test-repo',
+            'main',
+            'plugin.php',
+            'github_wp_updater',
+            'test-token'
+        );
+
+        $this->assertSame( 'Readme content.', $service->requestRawContent( 'readme.md', '2.0.0' ) );
+    }
+
+
+    /**
      * Ensures requestRelease() returns null when GitHub returns invalid JSON.
      *
      * @covers \Bmd\GithubWpUpdater\Services\RemoteRequest::requestRelease
@@ -258,7 +328,13 @@ final class RemoteRequestTest extends TestCase
             ]
         );
 
-        WP_Mock::userFunction( 'wp_cache_set', [ 'times' => 0 ] );
+        WP_Mock::userFunction(
+            'wp_cache_set',
+            [
+                'times' => 1,
+                'args'  => [ $cacheKey, null, 'github_wp_updater', 900 ],
+            ]
+        );
 
         $processor = $this->createMock( PluginHeaders::class );
 

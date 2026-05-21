@@ -85,9 +85,10 @@ final class PluginInfoTest extends TestCase
         $remote->expects( $this->once() )
             ->method( 'getPluginInfo' )
             ->willReturn( $remoteResponse );
+        $remote->expects( $this->never() )
+            ->method( 'requestLatestRelease' );
         $remote->expects( $this->once() )
-            ->method( 'requestRawContent' )
-            ->with( 'readme.md' )
+            ->method( 'requestReadmeContent' )
             ->willReturn( '# Description\nPlugin description' );
 
         $parser = $this->createMock( ReadmeParser::class );
@@ -105,5 +106,6 @@ final class PluginInfoTest extends TestCase
         $this->assertIsObject( $result );
         $this->assertSame( '3.1.0', $result->new_version );
         $this->assertSame( $sections, $result->sections );
+        $this->assertSame( 'github-plugin-updater/plugin.php', $result->plugin );
     }
 }
